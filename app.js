@@ -769,6 +769,34 @@ const drills = [
   {
     q: "PTE value is 0x21fda803. What does PTE2PA do conceptually?",
     a: "It removes the low flag positions, then restores the low zero positions required by chunk alignment, producing the clean physical chunk address."
+  },
+  {
+    q: "pipe(p); fork(); child does close(p[0]) but forgets close(p[1]). Parent calls read(p[0], buf, 1). What happens?",
+    a: "Parent blocks forever. p[1] write-end refcount is still > 0 (child kept it open), so read sees writeopen=1 and sleeps waiting for data that will never come."
+  },
+  {
+    q: "fork() returns. Child calls exec(\"/bin/ls\", args). exec succeeds. What does the next line after exec in the child run?",
+    a: "Nothing. exec replaces the entire address space on success and never returns. The old code is gone. If exec did return, it means it failed."
+  },
+  {
+    q: "User calls read(3, 0x1000, 512). In the kernel, argint(0, &fd) returns 3. Where did it read 3 from?",
+    a: "From p->trapframe->a0. The user's a0=3 (fd) was saved to the trapframe by uservec in trampoline.S. argint reads the saved value, not a live register."
+  },
+  {
+    q: "COW fork: parent and child both map va 0x4000 to pa P4 read-only. Parent writes to 0x4000. refcount[P4] is 2. Walk through the fault.",
+    a: "Write fault fires. Handler sees PTE has COW flag. refcount > 1, so: kalloc new page N4, memmove P4 to N4, remap parent 0x4000 to N4 with PTE_W, clear COW flag, decrement refcount[P4] to 1. Parent resumes writing to N4."
+  },
+  {
+    q: "COW: kernel calls copyout(pagetable, useraddr, kernelbuf, n). The destination page is COW. Does a write fault fire?",
+    a: "No. Kernel writes via copyout go through the page table software walk, not the MMU. copyout must check for COW itself and resolve it before copying."
+  },
+  {
+    q: "File system: itrunc frees data blocks under the doubly-indirect entry but not the L2 pointer blocks. What symptom?",
+    a: "Silent disk leak. Each L2 pointer block (256 entries) is one block. Over many create/delete cycles, free blocks decrease until the disk is full. No panic, no error — just gradually runs out."
+  },
+  {
+    q: "mmap(0, 4096, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0). Then close(fd). Then access the mapped page. What happens?",
+    a: "Works fine IF mmap called filedup(f) to increment the file refcount. close(fd) decrements it to 1 (VMA still holds a ref). The fault handler reads from the file normally. Without filedup, close drops the refcount to 0, file is freed, fault handler dereferences garbage."
   }
 ];
 
@@ -809,16 +837,22 @@ function el(tag, className, text) {
 }
 
 const labLinks = {
-  util: "mit_os_2025/labs/util.html",
-  syscall: "mit_os_2025/labs/syscall.html",
-  pgtbl: "mit_os_2025/labs/pgtbl.html",
+  "unix-surface": "mit_os_2025/labs/util.html",
+  "syscall-path": "mit_os_2025/labs/syscall.html",
+  "lookup-tree": "mit_os_2025/labs/pgtbl.html",
   traps: "mit_os_2025/labs/traps.html",
   cow: "mit_os_2025/labs/cow.html",
-  thread: "mit_os_2025/labs/thread.html",
+  uthread: "mit_os_2025/labs/thread.html",
   net: "mit_os_2025/labs/net.html",
-  lock: "mit_os_2025/labs/lock.html",
-  fs: "mit_os_2025/labs/fs.html",
+  "lock-lab": "mit_os_2025/labs/lock.html",
+  filesystem: "mit_os_2025/labs/fs.html",
   mmap: "mit_os_2025/labs/mmap.html"
+};
+
+/* assignment title -> lab link mapping */
+const assignmentLabMap = {
+  A1: "unix-surface", A2: "syscall-path", A3: "lookup-tree", A4: "traps",
+  A5: "cow", A6: "uthread", A7: "net", A8: "lock-lab", A9: "filesystem", A10: "mmap"
 };
 
 /* -- render functions --------------------------------------------------- */
@@ -844,10 +878,14 @@ function renderLessons(activeId = lessons[0].id) {
   const view = document.getElementById("lessonView");
   list.innerHTML = "";
 
+  const progress = getProgress();
   lessons.forEach((lesson) => {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = lesson.id === activeId ? "active" : "";
+    button.dataset.lessonId = lesson.id;
+    let cls = lesson.id === activeId ? "active" : "";
+    if (progress[lesson.id]) cls += " read";
+    button.className = cls;
     button.innerHTML = `${lesson.title}<small>${lesson.subtitle}</small>`;
     button.addEventListener("click", () => {
       history.replaceState(null, "", `#lesson-${lesson.id}`);
@@ -880,13 +918,31 @@ function renderLessons(activeId = lessons[0].id) {
   view.appendChild(beatList);
 
   view.appendChild(el("h4", "", "Fill-In Blanks"));
-  const blankList = el("ul");
+  const blankList = el("ul", "blank-list");
   lesson.blanks.forEach((blank) => {
     const li = el("li");
-    li.innerHTML = `<code>${escapeHtml(blank.prompt)}</code><br><strong>Answer:</strong> ${escapeHtml(blank.answer)}`;
+    const prompt = el("code");
+    prompt.textContent = blank.prompt;
+    li.appendChild(prompt);
+    const reveal = document.createElement("button");
+    reveal.className = "reveal-btn";
+    reveal.textContent = "Show answer";
+    reveal.type = "button";
+    const ans = el("span", "blank-answer hidden");
+    ans.textContent = blank.answer;
+    reveal.addEventListener("click", () => {
+      ans.classList.toggle("hidden");
+      reveal.textContent = ans.classList.contains("hidden") ? "Show answer" : "Hide";
+    });
+    li.appendChild(document.createElement("br"));
+    li.appendChild(reveal);
+    li.appendChild(ans);
     blankList.appendChild(li);
   });
   view.appendChild(blankList);
+
+  /* mark lesson as read */
+  markRead(lesson.id);
 
   view.appendChild(el("h4", "", "Assembled Code"));
   view.appendChild(el("pre", "", lesson.code.trim()));
@@ -899,12 +955,10 @@ function renderAssignments() {
     const titleRow = el("div", "assignment-title-row");
     titleRow.appendChild(el("h3", "", item.title));
     
-    // Extract internal ID from title like "A1 - Pipe..." -> util
-    const idMap = { "A1": "util", "A2": "syscall", "A3": "pgtbl", "A4": "traps", "A5": "cow", "A6": "thread", "A7": "net", "A8": "lock", "A9": "fs", "A10": "mmap" };
     const prefix = item.title.split(" ")[0];
-    if (idMap[prefix] && labLinks[idMap[prefix]]) {
+    if (assignmentLabMap[prefix] && labLinks[assignmentLabMap[prefix]]) {
       const link = el("a", "lab-link-small", "Lab Spec");
-      link.href = labLinks[idMap[prefix]];
+      link.href = labLinks[assignmentLabMap[prefix]];
       link.target = "_blank";
       titleRow.appendChild(link);
     }
@@ -989,6 +1043,37 @@ document.getElementById("showAnswer").addEventListener("click", () => {
   renderDrill(answer.hidden);
 });
 
+/* -- progress tracking -------------------------------------------------- */
+
+function getProgress() {
+  try { return JSON.parse(localStorage.getItem("os_progress") || "{}"); }
+  catch { return {}; }
+}
+
+function markRead(lessonId) {
+  const p = getProgress();
+  p[lessonId] = true;
+  localStorage.setItem("os_progress", JSON.stringify(p));
+  updateProgressBadges();
+}
+
+function updateProgressBadges() {
+  const p = getProgress();
+  document.querySelectorAll(".lesson-list button").forEach((btn) => {
+    const id = btn.dataset.lessonId;
+    if (id && p[id]) btn.classList.add("read");
+  });
+  const total = lessons.length;
+  const done = lessons.filter((l) => p[l.id]).length;
+  let badge = document.getElementById("progressBadge");
+  if (!badge) {
+    badge = el("span", "progress-badge");
+    badge.id = "progressBadge";
+    document.querySelector(".proof-strip").appendChild(badge);
+  }
+  badge.textContent = `${done}/${total} lessons read`;
+}
+
 /* -- init --------------------------------------------------------------- */
 
 renderModules();
@@ -997,3 +1082,4 @@ renderAssignments();
 renderCodeAudit();
 renderDrill(false);
 renderStyle();
+updateProgressBadges();

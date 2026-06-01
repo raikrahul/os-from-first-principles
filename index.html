@@ -36,7 +36,8 @@
           <small>from first principles</small>
         </span>
       </a>
-      <nav class="nav" aria-label="Primary">
+      <button class="hamburger" id="menuToggle" type="button" aria-label="Toggle navigation">&#9776;</button>
+      <nav class="nav" id="mainNav" aria-label="Primary">
         <a href="#course">Course</a>
         <a href="#lessons">Lessons</a>
         <a href="#assignments">Assignments</a>
@@ -58,9 +59,9 @@
             Names come later. You derive the code one line at a time.
           </p>
           <div class="proof-strip" aria-label="Project proof points">
-            <span>10 assignments</span>
-            <span>local xv6 code</span>
-            <span>tested net driver</span>
+            <span>10 modules</span>
+            <span>10 lessons</span>
+            <span>15 interview drills</span>
           </div>
           <div class="hero-actions">
             <a class="button primary" href="#course">Start the course</a>
@@ -194,6 +195,16 @@
       <a href="#home">Back to top</a>
     </footer>
 
+    <script>
+      document.getElementById('menuToggle').addEventListener('click', () => {
+        document.getElementById('mainNav').classList.toggle('open');
+      });
+      document.querySelectorAll('#mainNav a').forEach(a => {
+        a.addEventListener('click', () => {
+          document.getElementById('mainNav').classList.remove('open');
+        });
+      });
+    </script>
     <script src="app.js"></script>
   </body>
 </html>

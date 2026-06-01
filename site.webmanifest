@@ -1,0 +1,16 @@
+{
+  "name": "Operating Systems From First Principles",
+  "short_name": "OS First Principles",
+  "description": "A low-filler operating systems course built around xv6-style labs, concrete machine states, and fill-in-the-blank derivation.",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f7f7f2",
+  "theme_color": "#171915",
+  "icons": [
+    {
+      "src": "assets/favicon.svg",
+      "sizes": "64x64",
+      "type": "image/svg+xml"
+    }
+  ]
+}

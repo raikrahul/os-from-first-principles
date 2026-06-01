@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="A low-filler operating systems course that teaches xv6-style labs from concrete machine states first."
+    />
+    <meta name="theme-color" content="#171915" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Operating Systems From First Principles" />
+    <meta
+      property="og:description"
+      content="A do-the-work operating systems course: cells, rows, traps, and tests before jargon."
+    />
+    <meta property="og:image" content="assets/og-card.svg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Operating Systems From First Principles" />
+    <meta
+      name="twitter:description"
+      content="A low-filler OS course for doers: derive xv6 labs from concrete machine states."
+    />
+    <meta name="twitter:image" content="assets/og-card.svg" />
+    <title>Operating Systems From First Principles</title>
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="site.webmanifest" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#home" aria-label="Operating Systems From First Principles">
+        <span class="brand-mark" aria-hidden="true">OS</span>
+        <span>
+          <strong>Operating Systems</strong>
+          <small>from first principles</small>
+        </span>
+      </a>
+      <nav class="nav" aria-label="Primary">
+        <a href="#course">Course</a>
+        <a href="#lessons">Lessons</a>
+        <a href="#assignments">Assignments</a>
+        <a href="#local-code">Local Code</a>
+        <a href="#drills">Drills</a>
+        <a href="#style">Style</a>
+        <a href="mit_os_2025/schedule.html" target="_blank">MIT Schedule</a>
+        <a href="mit_os_2025/docs/xv6-book-2025.pdf" target="_blank">xv6 Book</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero" id="home">
+        <div class="hero-copy">
+          <p class="eyebrow">Open-course material, rebuilt for people who need the missing mental moves.</p>
+          <h1>Learn operating systems by drawing the machine first.</h1>
+          <p class="lede">
+            Each lesson starts with cells, pointers, rows, counts, and failure cases.
+            Names come later. You derive the code one line at a time.
+          </p>
+          <div class="proof-strip" aria-label="Project proof points">
+            <span>10 assignments</span>
+            <span>local xv6 code</span>
+            <span>tested net driver</span>
+          </div>
+          <div class="hero-actions">
+            <a class="button primary" href="#course">Start the course</a>
+            <a class="button" href="#lessons">Read lessons</a>
+          </div>
+        </div>
+
+        <div class="machine-board" aria-label="Machine diagram">
+          <div class="board-row label">
+            <span>core</span><span>shared memory</span><span>device</span>
+          </div>
+          <div class="board-row">
+            <span class="chip">runs code</span>
+            <span class="bus">row[3]: ptr=0x8002_0040 len=74 cmd=0x09</span>
+            <span class="chip accent">reads row</span>
+          </div>
+          <div class="board-row">
+            <span class="chip">fills record</span>
+            <span class="bus">box @ 0x8002_0000 -> data @ 0x8002_0040</span>
+            <span class="chip">writes done</span>
+          </div>
+          <div class="board-row label">
+            <span>one line</span><span>one state</span><span>one trap</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="band" id="course">
+        <div class="section-head">
+          <p class="eyebrow">Course map</p>
+          <h2>The path</h2>
+          <p>
+            Ten modules. Each module has a short lesson, a fill-in assignment, and a
+            gotcha list. The order follows the xv6 lab arc, but the language is plain.
+          </p>
+        </div>
+        <div class="timeline" id="courseTimeline"></div>
+      </section>
+
+      <section class="band split" id="lessons">
+        <div class="section-head">
+          <p class="eyebrow">Lessons</p>
+          <h2>Read, then derive</h2>
+          <p>Pick a lesson. Every page is designed for paper work, not passive reading.</p>
+        </div>
+        <div class="lesson-shell">
+          <aside class="lesson-list" id="lessonList" aria-label="Lesson list"></aside>
+          <article class="lesson-view" id="lessonView" tabindex="-1"></article>
+        </div>
+      </section>
+
+      <section class="band" id="assignments">
+        <div class="section-head">
+          <p class="eyebrow">Assignments</p>
+          <h2>Minimal briefs</h2>
+          <p>No long preface. Each brief says what to build, what to prove, and where you can lie to yourself.</p>
+        </div>
+        <div class="assignment-grid" id="assignmentGrid"></div>
+      </section>
+
+      <section class="band" id="local-code">
+        <div class="section-head">
+          <p class="eyebrow">Local code audit</p>
+          <h2>Can this be done here?</h2>
+          <p>
+            Yes. The working tree has the combined hand-built code through net,
+            and the official xv6-labs-2021 checkout has branch scaffolds and
+            graders for the remaining assignments.
+          </p>
+        </div>
+        <div class="code-audit" id="codeAudit"></div>
+      </section>
+
+      <section class="band" id="drills">
+        <div class="section-head">
+          <p class="eyebrow">Drills</p>
+          <h2>Interview pressure</h2>
+          <p>Questions that force exact state transitions, not slogans.</p>
+        </div>
+        <div class="drill-panel">
+          <div id="drillQuestion" class="drill-question"></div>
+          <div class="drill-controls">
+            <button class="icon-button" id="prevDrill" type="button" aria-label="Previous drill">‹</button>
+            <button class="button primary" id="showAnswer" type="button">Show answer</button>
+            <button class="icon-button" id="nextDrill" type="button" aria-label="Next drill">›</button>
+          </div>
+          <pre id="drillAnswer" class="answer-box" hidden></pre>
+        </div>
+      </section>
+
+      <section class="band" id="style">
+        <div class="section-head">
+          <p class="eyebrow">House style</p>
+          <h2>The teaching contract</h2>
+          <p>This is the reusable format for future posts and paid lessons.</p>
+        </div>
+        <div class="style-grid" id="styleGrid"></div>
+      </section>
+
+      <section class="band" id="publish">
+        <div class="section-head">
+          <p class="eyebrow">Publish-ready</p>
+          <h2>Built for doers</h2>
+          <p>
+            This is not a notes dump. The repo has a static site, share cards,
+            licensing, attribution, contribution rules, and a GitHub Pages workflow.
+          </p>
+        </div>
+        <div class="publish-grid">
+          <article>
+            <strong>No dependency trap</strong>
+            <p>Open `index.html`, or push to GitHub Pages. The site has no package install requirement.</p>
+          </article>
+          <article>
+            <strong>Proof over slogans</strong>
+            <p>Assignments point to local code, branch scaffolds, tests, and graders.</p>
+          </article>
+          <article>
+            <strong>Forkable format</strong>
+            <p>Each new lesson follows the same shape: state, blank, failure, code, grill.</p>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>
+        Independent learning material inspired by xv6 and MIT 6.S081. Not affiliated with MIT.
+        Source code examples are short teaching excerpts.
+      </p>
+      <a href="#home">Back to top</a>
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
+</html>

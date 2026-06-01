@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://os-from-first-principles.github.io/sitemap.xml

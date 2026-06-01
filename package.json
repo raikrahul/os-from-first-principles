@@ -1,0 +1,18 @@
+{
+  "name": "os-from-first-principles",
+  "version": "0.1.0",
+  "private": false,
+  "description": "A concrete-state-first operating systems course built around xv6-style labs.",
+  "scripts": {
+    "check": "node --check app.js",
+    "serve": "python3 -m http.server 8000"
+  },
+  "keywords": [
+    "operating-systems",
+    "xv6",
+    "mit-6s081",
+    "systems",
+    "education"
+  ],
+  "license": "MIT"
+}

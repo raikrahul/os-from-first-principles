@@ -1,24 +1,24 @@
-Lab 4 — Traps (Plan)
+# Lab 4 — Traps (Plan)
 
-Status
+## Status
 - Branch: `trap` (already exists)
 - Prereq: Lab 1 (util), Lab 2 (syscall), Lab 3 (pgtbl) all complete on their branches.
 
-Tasks (3 of them)
+## Tasks (3 of them)
 
-Task A — RISC-V Assembly Reading
+### Task A — RISC-V Assembly Reading
 - No code to write; just questions about `user/call.c` and its compiled assembly.
 - Purpose: learn the RISC-V calling convention (arg regs, return regs,
   callee-saved vs caller-saved, where the return-address lives).
 - Submit answers as `answers-traps.txt`.
 
-Task B — Backtrace
+### Task B — Backtrace
 - Write `void backtrace(void)` in `kernel/printf.c`.
 - Walks up the kernel stack reading each frame's saved return-address; prints them.
 - Useful debugging tool — when the kernel panics, you can see the call chain.
 - Call it from `sys_sleep()` so it fires when the test program runs.
 
-Task C — Alarm
+### Task C — Alarm
 - Add two new operations:
   - `sigalarm(int interval, void (*handler)())` — every `interval` ticks, call `handler` once.
   - `sigreturn()` — called by the handler when done; restores normal user execution.
@@ -27,13 +27,13 @@ Task C — Alarm
   + `user/usys.pl` + `user/user.h` (boilerplate for the two new ops).
 - User test programs are provided (`alarmtest`).
 
-Order
+## Order
 Recommended:
 1. Task A first (no code, fast warm-up; refreshes calling convention).
 2. Task B second (small, self-contained; teaches frame walking).
 3. Task C last (most intricate; touches trap.c + trapframe surgery).
 
-Substrate to derive BEFORE writing code
+## Substrate to derive BEFORE writing code
 - RISC-V calling convention: which regs are caller-saved (a0-a7, t0-t6, ra)
   vs callee-saved (s0-s11, sp).
 - Stack frame layout: prev-fp at offset -16 from current fp; ra at offset -8.
@@ -43,7 +43,7 @@ Substrate to derive BEFORE writing code
 - Timer interrupt: fires every tick (10 ms). Lands in `usertrap()` or
   `kerneltrap()`. `which_dev == 2` flag indicates timer.
 
-Testing
+## Testing
 ```bash
 cd labs/xv6-new
 rm -f fs.img
@@ -56,13 +56,13 @@ Test programs (provided by lab repo or written for the lab):
 - `alarmtest` — tests Task C in several scenarios (handler called regularly;
   sigreturn restores correctly; works across multiple alarms).
 
-Lessons (see `lab4_lesson.md`)
+## Lessons (see `lab4_lesson.md`)
 - Lesson 1: RISC-V calling convention + register save/restore.
 - Lesson 2: Stack frames and how to walk them.
 - Lesson 3: Trapframe surgery — redirecting user PC by modifying epc.
 - Lesson 4: Restoring state via saved trapframe (sigreturn).
 
-Hooks (where code goes)
+## Hooks (where code goes)
 
 | File | Function | What |
 |---|---|---|
@@ -78,12 +78,12 @@ Hooks (where code goes)
 | user/user.h | prototypes | int sigalarm(int, void(*)()); int sigreturn(void); |
 | user/usys.pl | entry | entry("sigalarm"); entry("sigreturn"); |
 
-Things to verify after each task
+## Things to verify after each task
 - After Task B: kernel panics print a sensible call chain.
 - After Task C: alarmtest passes all scenarios; user state is preserved
   across handler calls (regs same before/after).
 
-Common pitfalls
+## Common pitfalls
 - Forgetting that ra is at fp-8 and prev-fp is at fp-16 (these are negative
   offsets from the current fp, not positive).
 - In backtrace: stop when fp reaches the top of the kernel stack

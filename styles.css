@@ -336,6 +336,15 @@ code {
   font-weight: bold;
 }
 
+.grill-q {
+  display: block;
+  margin-bottom: 0.4rem;
+}
+
+.grill-item .reveal-btn {
+  margin-top: 0.2rem;
+}
+
 .button.primary {
   background: var(--ink);
   border-color: var(--ink);

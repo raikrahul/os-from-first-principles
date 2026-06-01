@@ -1,8 +1,8 @@
-Lab 4 — Traps (Lesson)
+# Lab 4 — Traps (Lesson)
 
-Lesson 1: RISC-V Calling Convention
+## Lesson 1: RISC-V Calling Convention
 
-What gets passed in which named cell
+### What gets passed in which named cell
 
 When function `caller()` calls `callee(a, b, c)`:
 
@@ -27,23 +27,23 @@ callee:
 | s1..s11 | Other callee-saved cells. |
 | t0..t6 | Caller-saved temporaries. |
 
-Caller-saved vs callee-saved
+### Caller-saved vs callee-saved
 
 - **Caller-saved (a0..a7, t0..t6, ra):** caller must save these before calling
   if it cares about their value after. Callee is free to clobber.
 - **Callee-saved (s0..s11, sp):** callee must save (and restore) these if it
   changes them. Caller can assume they're unchanged across the call.
 
-Why this matters for Lab 4
+### Why this matters for Lab 4
 
 - Backtrace reads `s0` (= fp) to find the current frame, then walks up.
 - Alarm's handler runs as if a function call — but the kernel must save
   enough state for sigreturn to restore. The trapframe already saves all
   31 user-mode integer cells, so saving the entire trapframe covers it.
 
-Lesson 2: Stack Frames and Walking Them
+## Lesson 2: Stack Frames and Walking Them
 
-Per-function frame layout (set up by the compiler at function entry)
+### Per-function frame layout (set up by the compiler at function entry)
 
 ```
 high addresses
@@ -72,7 +72,7 @@ Two fixed positions in every frame:
 - **ra at fp - 8**: where this function returns to.
 - **prev-fp at fp - 16**: pointer to the caller's frame.
 
-Walking the stack
+### Walking the stack
 
 ```c
 uint64 fp = r_fp();   // read current fp (s0)
@@ -84,7 +84,7 @@ while (fp is still inside the kernel stack) {
 }
 ```
 
-Bounding the walk
+### Bounding the walk
 
 Kernel stacks are one chunk (4096 storage units). To stop the walk at the
 top of the stack:
@@ -100,7 +100,7 @@ while (fp < stack_top) {
 When prev-fp reaches or exceeds stack_top, we've walked past the first
 function in the kernel call chain. Stop.
 
-Drawing for a 3-deep call: usertrap → syscall → sys_sleep
+### Drawing for a 3-deep call: usertrap → syscall → sys_sleep
 
 ```
 KERNEL STACK (one 4096-unit chunk for this task)
@@ -139,9 +139,9 @@ Walking from fp:
 
 Prints 3 addresses. Pipe through `addr2line` to convert to file:line.
 
-Lesson 3: Trapframe Surgery (for Alarm)
+## Lesson 3: Trapframe Surgery (for Alarm)
 
-Trapframe layout reminder
+### Trapframe layout reminder
 
 Per-task chunk, 288 storage units, holding saved user regs + kernel
 bookkeeping. Lives at fixed VA = TRAPFRAME (= MAXVA - 2*PGSIZE) in user
@@ -159,7 +159,7 @@ Trapframe (per task):
 After a trap, `trapframe->epc` holds the user PC at the trap moment.
 Trap-return loads PC = trapframe->epc.
 
-Redirecting user execution via trapframe surgery
+### Redirecting user execution via trapframe surgery
 
 To make user-mode start executing function `handler()` instead of resuming
 where they were:
@@ -174,7 +174,7 @@ p->trapframe->epc = (uint64) handler;     // redirect epc
 
 Trap-return runs. User now executes handler() instead of their old PC.
 
-Restoring after handler (sigreturn)
+### Restoring after handler (sigreturn)
 
 User's handler calls sigreturn() at the end. sigreturn:
 
@@ -187,7 +187,7 @@ return p->trapframe->a0;                  // preserve a0 in handler return path
 Trap-return runs. User now resumes at the original PC (saved in epc),
 with all original regs restored.
 
-Drawing for alarm flow
+### Drawing for alarm flow
 
 ```
 ─── User running normally ──────────────────────────────────
@@ -233,9 +233,9 @@ Drawing for alarm flow
    foo continues as if nothing happened.
 ```
 
-Lesson 4: Common Traps and Gotchas
+## Lesson 4: Common Traps and Gotchas
 
-Gotcha 1: a0 clobbered by syscall return path
+### Gotcha 1: a0 clobbered by syscall return path
 
 When sigreturn returns, the kernel's syscall dispatcher writes the return
 value into `p->trapframe->a0` AFTER your sys_sigreturn function returns
@@ -245,12 +245,12 @@ restored a0 with whatever sys_sigreturn returns.
 Fix: have sys_sigreturn return `p->trapframe->a0` itself. The syscall
 dispatcher's write becomes a no-op (writing the same value).
 
-Gotcha 2: Double-alarm during handler
+### Gotcha 2: Double-alarm during handler
 
 If timer fires AGAIN while the handler is running, you must NOT
 re-redirect. Use `p->in_handler` flag — only fire if NOT in handler.
 
-Gotcha 3: Walking past the kernel stack in backtrace
+### Gotcha 3: Walking past the kernel stack in backtrace
 
 Kernel stack is one 4096-unit chunk. If you don't bound the walk,
 `fp = *(fp - 16)` will eventually point at garbage outside the stack,
@@ -258,7 +258,7 @@ causing a page fault or printing junk.
 
 Use `PGROUNDUP(fp)` as the upper bound. Stop when fp >= PGROUNDUP(start_fp).
 
-Gotcha 4: backtrace's fp register
+### Gotcha 4: backtrace's fp register
 
 s0 is also fp. Read it via inline assembly:
 ```c
@@ -272,7 +272,7 @@ r_fp(void)
 ```
 Put this in riscv.h alongside r_satp and friends.
 
-Anti-skim grill
+## Anti-skim grill
 
 1. What does PGROUNDUP do to a value that's already a multiple of 4096?
    (Answer: returns it unchanged. PGROUNDUP only rounds UP if not already

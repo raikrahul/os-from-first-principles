@@ -1,12 +1,12 @@
-Lab 3 — The Lookup Tree (3 levels, 4096-byte chunks)
+# Lab 3 — The Lookup Tree (3 levels, 4096-byte chunks)
 
-What it is
+## What it is
 
 A 3-level tree of 4096-byte chunks that the silicon-equivalent reads to convert
 the user-program's 8-byte place-name into the where-the-bytes-actually-live
 number. One tree per task.
 
-Structure
+## Structure
 
 ```
 ONE TASK'S TREE — 3 levels of chunks, ending at the FINAL chunks that hold the user's actual bytes:
@@ -47,7 +47,7 @@ vmprint's job: visit every USED slot at every level. Print one line per visit.
   - When at level 0 or 1, descend into the chunk the slot names. At level 2, just print.
 ```
 
-Slot packing
+## Slot packing
 
 Each chunk in the tree: 4096 bytes = 512 slots × 8 bytes per slot. The 8-byte
 slot must carry both the name-of-next-chunk AND flag bits — together that's
@@ -69,7 +69,7 @@ A slot's 8 bytes laid out:
                                           V  R  W  X  U  (low 5)
 ```
 
-Flag bit meanings (kernel/riscv.h)
+## Flag bit meanings (kernel/riscv.h)
 
 | Macro   | Position | Meaning                                  |
 |---------|----------|------------------------------------------|
@@ -79,7 +79,7 @@ Flag bit meanings (kernel/riscv.h)
 | PTE_X   | bit 3    | Fetch-and-execute allowed                |
 | PTE_U   | bit 4    | User-program may access (else privileged-only) |
 
-Useful macros (kernel/riscv.h)
+## Useful macros (kernel/riscv.h)
 
 | Macro          | What it does                                              |
 |----------------|-----------------------------------------------------------|
@@ -91,7 +91,7 @@ Useful macros (kernel/riscv.h)
 | PXMASK         | 0x1FF — 9-bit mask for slot index                         |
 | PXSHIFT(level) | 12 + 9*level                                              |
 
-Concrete pack/unpack example
+## Concrete pack/unpack example
 
 ```
 A chunk lives at place 0x87f6a000. (4096-aligned: low 12 binary = 0.)
@@ -109,7 +109,7 @@ To unpack back: PTE2PA(0x21fda803) =
 Matches lab spec output: "pte 0x...21fda801 pa 0x...87f6a000"
 ```
 
-How `pagetable_t` is used as an array
+## How `pagetable_t` is used as an array
 
 `pagetable_t = uint64 *` — an 8-unit place-name (one slot wide). When used with
 the indexing operator, it's treated as the start of an array of uint64 slots.
@@ -129,7 +129,7 @@ Local declaration:  pagetable_t pagetable = (pagetable_t) kalloc();
                             0x87f6e000 0x87f6e008 0x87f6e010      0x87f6effc+4
 ```
 
-Indexing forms
+### Indexing forms
 
 ```c
 pagetable[i]            // reads the VALUE at slot i
@@ -141,7 +141,7 @@ pagetable + i           // PLACE-NAME of slot i (same thing, no & needed)
 `pagetable[i]` is equivalent to `*(pagetable + i)` (dereference the i-th slot).
 `&pagetable[i]` cancels the dereference, leaving just `pagetable + i`.
 
-Why walk returns `&pagetable[PX(level, va)]`
+### Why walk returns `&pagetable[PX(level, va)]`
 
 Walk's caller (`mappages`) needs to WRITE the final packed mapping into the
 slot. To write, the caller needs the place-name, not the value. Hence walk
@@ -152,7 +152,7 @@ pte_t *slot = walk(kpgtbl, UART0, 1);
 *slot = PA2PTE(UART0) | PTE_R | PTE_W | PTE_V;   // <- writing through the place-name
 ```
 
-Slot's 64 positions broken down
+## Slot's 64 positions broken down
 
 ```
 position:  63 ... 54   53 ............ 10   9 ........ 0
@@ -170,13 +170,13 @@ A full chunk-name is 56 positions wide. Of those 56:
 
 PTE2PA extracts the 44 (`>> 10`) and adds the 12 zeros back (`<< 12`).
 
-Difference vs satp
+## Difference vs satp
 
 `satp` stores a chunk-name without packing — no flag bits in the low 10. The
 kernel typecasts satp's value directly to `pagetable_t`. The packing trick only
 happens INSIDE slots of the tree, not in satp.
 
-Combined tree + macros diagram
+## Combined tree + macros diagram
 
 ```
 A USER-NUMBER N (8 bytes; 39 useful binary positions):
@@ -241,9 +241,9 @@ VMPRINT vs LOOKUP:
   - VMPRINT loops over all 512 slots per chunk, prints each used one.
 ```
 
-Task 2 — per-task privileged-mode tree
+## Task 2 — per-task privileged-mode tree
 
-Current state (before Task 2)
+### Current state (before Task 2)
 
 ```
 3 tasks running. Each has its OWN user-mode tree.
@@ -280,7 +280,7 @@ But all share ONE privileged-mode tree.
          └─────────────────────────────────┘
 ```
 
-After Task 2
+### After Task 2
 
 ```
 Each task has TWO trees: user + its own privileged.
@@ -296,7 +296,7 @@ Each priv tree has the SAME hardware/code/data mappings as the global one
 PLUS only this task's own stack (not the other tasks').
 ```
 
-The problem solved
+### The problem solved
 
 Without per-task priv tree, privileged code can't dereference a user-given
 number directly — the user mapping isn't in the shared privileged tree.
@@ -306,7 +306,7 @@ tree slot-by-slot (`walkaddr` in `vm.c`) to translate. Slow and bug-prone.
 With per-task priv tree, Task 3 of the lab installs the user mappings INTO
 the priv tree too. Then `copyin` becomes a plain `memmove`.
 
-Walk first-iteration state trace (UART0 example)
+## Walk first-iteration state trace (UART0 example)
 
 ```
 ENTRY STATE:
@@ -357,7 +357,7 @@ The caller (mappages) writes the FINAL mapping into bottom[0]:
   *returned = (UART0 >> 12 << 10) | PTE_R | PTE_W | PTE_V
 ```
 
-PA2PTE — packing a chunk-name into a slot
+## PA2PTE — packing a chunk-name into a slot
 
 `PA2PTE(pa) = ((pa >> 12) << 10)`. Inverse of PTE2PA.
 
@@ -383,9 +383,9 @@ Result 0x21fda800:
 After caller's | PTE_V → 0x21fda801, ready to write into a slot.
 ```
 
-Paging — Comprehensive Overview (formal terminology)
+## Paging — Comprehensive Overview (formal terminology)
 
-Definition
+### Definition
 
 Paging is a memory management technique where:
 1. The CPU's view of memory is divided into fixed-size **pages** (typically 4 KB).
@@ -394,7 +394,7 @@ Paging is a memory management technique where:
 4. On every memory access, the **MMU** consults the page table to translate VA → PA.
 5. The translation also carries permission bits (R/W/X/U), enforced by the MMU.
 
-Why Paging Exists
+### Why Paging Exists
 
 1. **Memory isolation.** Each process gets its own page table. Process A's
    VA 0x1000 maps to a different physical page than B's 0x1000.
@@ -410,7 +410,7 @@ Why Paging Exists
 6. **Memory relocation.** Physical memory may be fragmented; each process
    sees a virtually contiguous layout.
 
-Hardware Components
+### Hardware Components
 
 - **MMU** — translates VAs to PAs on every load/store. Walks page tables in
   hardware on TLB miss.
@@ -422,7 +422,7 @@ Hardware Components
 - **Page-fault exception** — taken when MMU can't translate. CPU saves the
   faulting VA in stval (RISC-V) / CR2 (x86) for the handler.
 
-Multi-Level Page Tables
+### Multi-Level Page Tables
 
 A flat 39-bit VA space with 4 KB pages would need 2^27 × 8 = 1 GB of table.
 Solution: a radix tree of page tables.
@@ -437,7 +437,7 @@ mapped ranges. Empty branches → no table allocation.
 Each PTE: 64 bits = (10 reserved) + (44 bits physical frame number) +
 (10 bits flags including V, R, W, X, U, A, D, G).
 
-Page Faults
+### Page Faults
 
 When the MMU can't translate:
 1. CPU saves VA in stval / CR2.
@@ -450,7 +450,7 @@ When the MMU can't translate:
    - **Swap-in:** read from swap, install PTE.
    - **Illegal access:** send SIGSEGV.
 
-Real Systems
+### Real Systems
 
 - **Linux** — each task_struct → mm_struct → pgd. Kernel runs against
   current task's pgd. Kernel mappings in upper half of every pgd. KPTI
@@ -459,14 +459,14 @@ Real Systems
   kernel_pagetable. Lab 3 Task 2 adds per-process kernel pagetable.
 - **macOS / FreeBSD** — pmap structure per process.
 
-Performance Considerations
+### Performance Considerations
 
 - **TLB pressure** — every context switch flushes TLB (unless PCID/ASID).
   Warmup costs hundreds of cycles per page.
 - **Hugepages** — 2 MB or 1 GB pages. One TLB entry covers more.
 - **NUMA** — pages on remote nodes pay extra cycles per access.
 
-Walk loop — what changes each iteration
+## Walk loop — what changes each iteration
 
 Three things move in lockstep per iter:
 - `level` — loop counter, going 2 → 1 → (exit).
@@ -494,14 +494,14 @@ After loop:
                                   (bottom index = positions 12..20 of va)
 ```
 
-What walk returns
+## What walk returns
 
 The PLACE-NAME of the bottom slot (a `pte_t *` = 8-unit number), NOT the value
 stored there. The bottom chunk was just allocated and zeroed by walk, so its
 contents are all 0. The caller (`mappages`) uses the place-name to WRITE the
 final mapping there.
 
-mappages — the loop that calls walk
+## mappages — the loop that calls walk
 
 ```c
 mappages(pagetable_t pagetable, uint64 va, uint64 size, uint64 pa, int perm)
@@ -528,7 +528,7 @@ mappages(pagetable_t pagetable, uint64 va, uint64 size, uint64 pa, int perm)
 }
 ```
 
-Loop role per piece
+### Loop role per piece
 
 1. `a = va`, `last = va + size - PGSIZE` — set up walking variables.
 2. `for (;;)` — infinite loop, broken by `if (a == last) break`. Runs `size / PGSIZE` times.
@@ -537,14 +537,14 @@ Loop role per piece
 5. `*pte = PA2PTE(pa) | perm | PTE_V` — write the final mapping. Pack pa into chunk-name field, OR in perm flags and V.
 6. `a += PGSIZE`, `pa += PGSIZE` — advance both to next chunk.
 
-Walk's PTE_V check vs mappages's PTE_V check
+### Walk's PTE_V check vs mappages's PTE_V check
 
 | Where | Slot type | If V is set | Meaning |
 |---|---|---|---|
 | walk | top, middle | descend via PTE2PA | normal; intermediate branch exists |
 | mappages | bottom (after walk) | panic | double-install bug; refuse to overwrite |
 
-Example: kvmmap call for KERNBASE..etext (size = 0x7000)
+### Example: kvmmap call for KERNBASE..etext (size = 0x7000)
 
 ```
 last = 0x80000000 + 0x7000 - 0x1000 = 0x80006000
@@ -561,7 +561,7 @@ Iteration 7:  a = 0x80006000, pa = 0x80006000  →  walk descends, writes B2[6]
 
 Only first iteration pays alloc cost. Subsequent iterations reuse the same middle/bottom chunks.
 
-Why mappages's loop is cheap — the sharing trick
+## Why mappages's loop is cheap — the sharing trick
 
 vas that share high indexing-position groups share walk's path through
 the tree. PX decomposes va's 27 high positions into three 9-position groups:
@@ -572,7 +572,7 @@ the tree. PX decomposes va's 27 high positions into three 9-position groups:
 
 The low 12 positions of va = within-chunk-byte index for the leaf-pointed chunk.
 
-Sharing
+### Sharing
 
 | Two vas share | Consequence in walk |
 |---|---|
@@ -580,7 +580,7 @@ Sharing
 | same PX(2) and PX(1)             | same depth-2 + depth-1 slots → same depth-0 chunk |
 | same PX(2), PX(1), PX(0)         | same leaf slot — they map the SAME 4096 storage units |
 
-Mappages loop behavior
+### Mappages loop behavior
 
 `a` advances by 4096 each iteration. PX(0) increments by 1 each step.
 PX(1) increments by 1 only when PX(0) wraps from 511 → 0 (every 512 iterations).
@@ -591,7 +591,7 @@ chunk. Walk builds those once; reuses for the next 511 calls. Only at every
 512th iteration does walk allocate a NEW depth-0 chunk; only at every
 512×512 iteration does walk allocate a new depth-1 chunk.
 
-For the kernel data call (128 MB)
+### For the kernel data call (128 MB)
 
 - 32,761 iterations.
 - 64 new depth-0 chunks (one per 512 iterations).
@@ -600,7 +600,7 @@ For the kernel data call (128 MB)
 
 Total new tree allocation: 64 chunks × 4096 = 256 KB for 128 MB of mappings.
 
-Concrete numbers — vas sharing PX(2)
+## Concrete numbers — vas sharing PX(2)
 
 PX(2, va) extracts only 9 of va's 64 positions (positions 30..38).
 Two different vas have the same PX(2) whenever those 9 positions agree,
@@ -633,16 +633,16 @@ apart) share PX(2) for very long stretches. Walk reuses the depth-2 path
 and depth-1 chunk; only allocates a new depth-0 chunk when PX(1) changes
 (every 512 iterations).
 
-Trampoline — Professional Explanation
+## Trampoline — Professional Explanation
 
-What it is
+### What it is
 
 A small assembly stub (`trampoline.S`) containing `uservec` (trap entry) and
 `userret` (trap exit). Mapped at virtual address `TRAMPOLINE = MAXVA - PGSIZE`
 in EVERY page table (user pagetables, kernel pagetable, and post-Lab 3
 per-process kernel pagetables).
 
-The problem it solves
+### The problem it solves
 
 When user runs `ecall`, RISC-V hardware:
 1. Switches U-mode → S-mode.
@@ -658,7 +658,7 @@ pre-swap can't reach it.
 Solution: place the satp-write instruction in a page mapped at the SAME va
 in BOTH pagetables. That page is the trampoline.
 
-Trap entry sequence (timing)
+### Trap entry sequence (timing)
 
 ```
 t0  active=user    PC=user_code           user runs `ecall`
@@ -674,7 +674,7 @@ t6  active=kernel  PC=0x80003124          uservec jumps to usertrap() in C.
                                             kernel PT maps it → fetch OK.
 ```
 
-Why user can't execute the trampoline themselves
+### Why user can't execute the trampoline themselves
 
 Three layers of defense:
 
@@ -689,27 +689,27 @@ Three layers of defense:
 Only `ecall` (which HW-elevates to S-mode before jumping to stvec) bypasses
 these layers — that's the only legitimate U → S transition.
 
-Why TRAMPOLINE = MAXVA - PGSIZE
+### Why TRAMPOLINE = MAXVA - PGSIZE
 
 Highest possible VA minus one page. Far from user space (low VAs) and
 kernel space (KERNBASE = 0x80000000). No conflict with anything.
 
-Linux equivalent
+### Linux equivalent
 
 KPTI's entry trampoline (kernel 4.15, Jan 2018). Same shape: a tiny page
 mapped at the same VA in both user and kernel pagetables, used as the
 safe location for CR3 swap on syscall entry.
 
-Task 3 — Mirror user arrows into per-task kpagetable
+## Task 3 — Mirror user arrows into per-task kpagetable
 
-Why
+### Why
 
 After Task 2, the per-task kpagetable has all kernel arrows but ZERO user
 arrows. When privileged code dereferences a user va, the active tree
 (kpagetable) doesn't know it → fault. To make `copyin` collapse to
 `memmove`, the active tree must ALSO have the user arrows.
 
-The helper
+### The helper
 
 ```c
 int
@@ -735,7 +735,7 @@ PTE_U cleared.
 PTE_U is cleared so S-mode can dereference these arrows (RISC-V default:
 S-mode can't touch PTE_U=1 pages without setting SUM in sstatus).
 
-Hook sites
+### Hook sites
 
 Four places where user space changes:
 
@@ -765,13 +765,13 @@ Four places where user space changes:
             (PGROUNDUP(oldsz) - PGROUNDUP(newsz)) / PGSIZE, 0);
    ```
 
-Invariant
+### Invariant
 
 At any moment the task could trap to S-mode, kpagetable's user arrows
 must match p->pagetable's user arrows for [0, p->sz). Miss a hook →
 copyin faults or returns garbage.
 
-Upper limit on user size
+### Upper limit on user size
 
 User arrows live at low vas (growing up from 0). Kernel arrows in the
 kpagetable include PLIC at 0x0c000000 (lowest kernel arrow). If user
@@ -787,7 +787,7 @@ if (sz + n >= PLIC || sz >= PLIC)
     return -1;
 ```
 
-PGROUNDUP in the shrink branch
+### PGROUNDUP in the shrink branch
 
 Chunks are atomic — you can't half-unmap. So when shrinking from
 sz=0x4000 to sz=0x2500, the chunk holding vas 0x2000..0x2FFF stays
@@ -807,7 +807,7 @@ Before sbrk(-0x1B00):                 After:
 uvmdealloc uses `PGROUNDUP(newsz) = 0x3000` as start, removes chunk Z
 only. kpagetable mirror unmap must use the same boundary to stay in sync.
 
-Nested loops in kvmcopymappings
+### Nested loops in kvmcopymappings
 
 ```
 kvmcopymappings:
@@ -822,7 +822,7 @@ Total per kvmcopymappings call: N × (2 + 2 + 1) reads/writes
 where N = (newsz - oldsz) / PGSIZE.
 ```
 
-Vmprint job at a glance
+## Vmprint job at a glance
 
 Given the top chunk's place-name, visit every used slot at every level and
 print one line per visit. Each line is:

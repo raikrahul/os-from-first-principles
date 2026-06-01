@@ -927,59 +927,92 @@ const labLinks = {
 /* lesson grill questions */
 const lessonGrills = {
   "unix-surface": [
-    { q: "argv[0] = \"pingpong\", argv[1] = NULL. argc = ?" },
-    { q: "pipe(p); fork(); parent close(p[1]); child close(p[0]); child write(p[1], \"x\", 1); parent read(p[0], buf, 1). Does read return 1 or block?" },
-    { q: "strcmp(\"hello\", \"hello\") returns 0. \"hello\" == \"hello\" returns ?" }
+    { q: "argv[0] = \"pingpong\", argv[1] = NULL. argc = ?",
+      a: "1. argc always counts argv[0] (the program name). A no-arg program has argc==1, and argv[1] is NULL — so guard with argc<2 before touching argv[1], never argc==0." },
+    { q: "pipe(p); fork(); parent close(p[1]); child close(p[0]); child write(p[1],\"x\",1); parent read(p[0],buf,1). Does read return 1 or block?",
+      a: "Returns 1. The child's write puts 1 byte in the pipe buffer; the parent's read drains it. If the child had ALSO closed p[1] (its write end) without writing, AND the parent held no write end, read would return 0 (EOF). EOF needs ALL write ends closed." },
+    { q: "strcmp(\"hello\",\"hello\") returns 0. \"hello\" == \"hello\" evaluates what?",
+      a: "Compares two pointers (addresses of the string literals), NOT the bytes. May be 1 if the compiler pools identical literals, may be 0 if not — undefined to rely on. Always use strcmp; ==0 means equal there." }
   ],
   "syscall-path": [
-    { q: "p->trapframe->a7 = 13 (pause). p->trapframe->a0 = 5. sys_pause returns 0. What value does the user see in a0 after syscall returns?" },
-    { q: "mask = 0x20 (1<<5). num = 5. mask & 1 << num = ?" },
-    { q: "argint(0, &fd) reads from p->trapframe->a0. If sigreturn restores a0=42, then returns 0, what does the user see?" }
+    { q: "p->trapframe->a7 = 13 (pause). p->trapframe->a0 = 5. sys_pause returns 0. What does the user see in a0?",
+      a: "0. The dispatcher does p->trapframe->a0 = syscalls[13](), overwriting the incoming 5 (the argument) with the return value 0. a0 is dual-use: argument IN, return value OUT." },
+    { q: "mask = 0x20 (1<<5). num = 5. In C, mask & 1 << num evaluates as what — (mask & 1) << num or mask & (1 << num)?",
+      a: "mask & (1 << num) = 0x20 & 0x20 = 0x20 (nonzero, true). << binds TIGHTER than &, so no parens needed here. The real trap is ==: 'mask & 1 == 0' parses as 'mask & (1==0)' = 'mask & 0' = 0 — always false." },
+    { q: "argint(0,&fd) reads p->trapframe->a0. sigreturn restores a0=42 then returns 0. What does the user see in a0?",
+      a: "0, not 42. The dispatcher overwrites a0 with sigreturn's return value (0) AFTER it runs. Fix: sigreturn must 'return p->trapframe->a0;' so the overwrite re-writes 42 over itself — a no-op that preserves the restored value." }
   ],
   "lookup-tree": [
-    { q: "PTE = 0x8002_0043 (V=1, R=1, W=0, X=0). PTE2PA(PTE) = ?" },
-    { q: "walk returns &pagetable[PX(0, va)]. If you write *pte = PA2PTE(pa) | perm, what happens to the old PTE?" },
-    { q: "mappages panics if *pte & PTE_V. Why not just overwrite?" }
+    { q: "PTE = 0x8002_0043 (V=1,R=1,W=0,X=0). PTE2PA(PTE) = ?",
+      a: "0x2000_8000. PTE2PA shifts right 10 (drop the 10 flag bits) then left 12: (0x80020043 >> 10) << 12. The low 10 bits (0x43 flags) are stripped; result is a 4096-aligned physical address." },
+    { q: "walk returns &pagetable[PX(0,va)]. You do *pte = PA2PTE(pa) | perm. What happened to whatever was there?",
+      a: "Silently overwritten. If the old PTE had V=1 it mapped a live page — you just leaked it and possibly aliased physical memory. That is why mappages refuses to remap a V=1 slot (panic 'remap')." },
+    { q: "mappages panics if *pte & PTE_V. Why panic instead of overwriting?",
+      a: "A V=1 slot means that virtual page is already mapped. Overwriting hides a double-map bug: two VAs to one frame, or a leaked frame. Panicking surfaces the logic error at the moment it happens instead of as later corruption." }
   ],
   "traps": [
-    { q: "backtrace: fp = 0x3fffffe0, bottom = 0x3ffff000, top = 0x40000000. Is fp valid?" },
-    { q: "alarm: p->interval = 10, p->ticks = 9, timer interrupt. p->alarm_on = 0. What happens?" },
-    { q: "sigreturn copies p->tf_backup to p->trapframe. If a second alarm fires during handler, what overwrites?" }
+    { q: "backtrace: fp = 0x3fffffe0, top = PGROUNDUP(fp) = 0x40000000. Loop runs while fp < top. Valid frame?",
+      a: "Yes, 0x3fffffe0 < 0x40000000, so read *(fp-8) as the return address and fp = *(fp-16). The walk stops the instant fp reaches 0x40000000 (the page top) — the kernel stack is exactly one 4096-byte page." },
+    { q: "alarm: p->interval=10, p->ticks=9, timer fires, p->alarm_on=0. What happens this tick?",
+      a: "p->ticks becomes 10, hits interval, so: alarm_on=1, tf_backup=*trapframe (save ALL 32 regs incl epc), trapframe->epc=handler. On sret the user runs the handler. ticks resets to 0." },
+    { q: "sigreturn copies tf_backup back to trapframe. If a second alarm fired DURING the handler, what would break?",
+      a: "tf_backup would be overwritten with the handler's own context, losing the original. That is why alarm_on gates re-entry: while alarm_on==1 the timer branch is skipped, so no second save clobbers the saved frame. sigreturn clears alarm_on." }
   ],
   "cow": [
-    { q: "refcount[pa] = 2. parent writes to va->pa. fault handler sees PTE_COW. What does it do?" },
-    { q: "copyout(pagetable, useraddr, kernelbuf, n). useraddr's page is COW. Does fault fire?" },
-    { q: "refcount[pa] = 1. write fault. *pte |= PTE_W, *pte &= ~PTE_COW. Why not allocate?" }
+    { q: "refcount[pa]=2. parent writes to va->pa, PTE has PTE_COW, PTE_W=0. Trace the fault handler.",
+      a: "scause=15 (store fault). Handler: kalloc a new frame, memmove 4096 bytes from pa, install new frame at va with PTE_W=1 and PTE_COW=0, then refcount[pa]-- (2->1). Parent now has a private writable copy; child still shares pa." },
+    { q: "copyout(pagetable, useraddr, kbuf, n) where useraddr's page is COW read-only. Does a page fault fire?",
+      a: "No — copyout is the KERNEL writing into user memory via the page table, not a CPU store through the MMU, so no store-fault traps. You must replicate COW logic inside copyout (walk the PTE, if COW do the copy) or the kernel write silently corrupts a shared page." },
+    { q: "refcount[pa]=1, write fault. You just set PTE_W=1, clear PTE_COW, no kalloc. Why is skipping the copy correct?",
+      a: "refcount==1 means this is the ONLY mapping of pa — nobody else shares it. Copying would waste a frame. Just restore write permission in place. Copy only when refcount>1." }
   ],
   "uthread": [
-    { q: "thread_create sets t->ctx.ra = (uint64)func. Why not t->ctx.ra = (uint64)thread_schedule?" },
-    { q: "switch saves old, loads new, ret. If current_thread = next before switch, what runs after ret?" },
-    { q: "Slot 0 = scheduler. New worker starts at slot 1. Why not 0?" }
+    { q: "thread_create sets t->ctx.ra = (uint64)func. What exactly happens on the first ret into this thread?",
+      a: "uthread_switch loads ra=func then executes ret, so pc jumps to func's first instruction with a fresh sp. The s0-s11 in ctx are garbage but harmless — func's prologue overwrites them. func must call thread_exit, never return (ra below it is undefined)." },
+    { q: "current_thread = next must run BEFORE uthread_switch. What breaks if you set it AFTER the switch call?",
+      a: "The line after uthread_switch never runs for the NEW thread — the ret inside switch teleports pc to the new thread's saved ra, skipping the rest of thread_schedule. So current_thread stays stale (still the old thread), and the next schedule corrupts state." },
+    { q: "Slot 0 is the scheduler. Workers start at slot 1. What goes wrong if a worker uses slot 0?",
+      a: "Slot 0's context is the scheduler's own saved state (the main thread that called thread_schedule). Overwriting it loses the return path back to main, so when all workers exit there is nothing valid to switch back to." }
   ],
   "net": [
-    { q: "tx_ring[i].status = 0x03, DD = 0x01. Is slot i reusable?" },
-    { q: "tx_mbufs[i] = 0x8002_0000, tx_ring[i].addr = 0x8002_0040. Which goes to mbuffree?" },
-    { q: "regs[E1000_TDT] = i. Is this DRAM or card register?" }
+    { q: "tx_ring[i].status = 0x03, DD bit = 0x01. Is slot i reusable?",
+      a: "Yes. Test the bit: 0x03 & 0x01 = 0x01 (nonzero) => DD set => card finished this slot => reusable. NEVER test status==1: 0x03!=1 would wrongly report 'busy' even though DD is set. Mask the one bit." },
+    { q: "tx_mbufs[i] = 0x8002_0000, tx_ring[i].addr = 0x8002_0040. Which address goes to mbuffree?",
+      a: "0x8002_0000 (tx_mbufs[i]) — the box START. addr (0x8002_0040) points at the DATA inside the box, 0x40 past the start. Freeing addr corrupts the allocator; you must free the chunk's beginning." },
+    { q: "regs[E1000_TDT] = i. Is this a write to DRAM or to the card?",
+      a: "To the CARD (a memory-mapped register over the bus, channel 2), not DRAM. It is the doorbell that wakes the card. Descriptor writes (tx_ring[i].*) go to DRAM silently; only the register write makes the card look. So it must come LAST, after a fence." }
   ],
   "lock-lab": [
-    { q: "kmem[NCPU]. kfree pushes onto kmem[cpuid()]. If scheduler moves core between cpuid() and acquire, what breaks?" },
-    { q: "bcache bucket 3 has lock3, bucket 8 has lock8. Core A wants block 42 (bucket3), Core B wants block 99 (bucket8). Do they collide?" },
-    { q: "bget miss: victim in bucket2, home bucket8. Which lock first?" }
+    { q: "kfree pushes onto kmem[cpuid()]. Scheduler moves the flow from core 3 to core 5 between cpuid() and acquire. What breaks?",
+      a: "id=3 is stale; you lock kmem[3] but are running on core 5, or worse two flows touch kmem[3] unsynchronized. The chunk lands on the wrong core's chain or a list is corrupted. Fix: push_off() around cpuid()+use pins the flow to its core." },
+    { q: "Core A wants block 42 (42%13=3, lock3), Core B wants block 99 (99%13=8, lock8). Do they serialize?",
+      a: "No — different buckets, different gate-cells. Both run fully parallel. That parallelism is exactly what bcachetest measures; one global lock would serialize them and fail the test." },
+    { q: "bget miss: victim found in bucket 2, home bucket is 8. Which lock do you grab first, and why?",
+      a: "lock2 first (lower index), then lock8. Every core grabs the lower-index bucket lock first, so two evictors can never each hold one and wait on the other — no deadlock cycle. After locking, re-check the victim is still refcnt==0; if not, rescan." }
   ],
   "filesystem": [
-    { q: "inode addrs[NDIRECT] = 12 direct blocks. addrs[NDIRECT] points to indirect block. How many total blocks max?" },
-    { q: "symlink(\"a\", \"b\"). open(\"b\") reads inode type = T_SYMLINK. What next?" },
-    { q: "itrunc frees data blocks but not L2 pointer blocks. Symptom?" }
+    { q: "inode has 11 direct + 1 singly-indirect (256) + 1 doubly-indirect. Max blocks? In bytes at BSIZE=1024?",
+      a: "11 + 256 + 256*256 = 11 + 256 + 65536 = 65803 blocks = 65803*1024 = 67,382,272 bytes (~64 MB). The doubly-indirect entry is what lifts the limit from 268 blocks to 65803." },
+    { q: "symlink target stored, open(\"b\") reads inode type T_SYMLINK. What does open do next, and what stops an A->B->A loop?",
+      a: "It reads the path stored in the symlink's data block and re-resolves from there, looping. A depth counter caps follows at 10; on the 11th, return -1 (ELOOP). Without the cap, a cyclic symlink spins in the kernel forever." },
+    { q: "itrunc frees the data blocks but forgets the L2 pointer blocks of the doubly-indirect tree. Exact symptom?",
+      a: "A slow disk leak: one pointer block (1024 bytes) lost per 256 data blocks freed. The file's data is gone but the bitmap still marks those index blocks used; balloc eventually runs out though df shows space. Free L2 blocks AND the root." }
   ],
   "mmap": [
-    { q: "mmap(0, 4096, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0). Then close(fd). Then access page. What happens?" },
-    { q: "munmap splits a VMA range. va=0x4000..0x8000, munmap(0x5000, 0x1000). How many VMAs after?" },
-    { q: "dirty page writeback: page fault sets PTE_W, marks dirty. When does write to file happen?" }
+    { q: "mmap(...,MAP_SHARED, fd, 0); close(fd); then touch the page. Why does the access still work?",
+      a: "mmap called filedup(f), bumping the file's refcount, so close(fd) only drops the fd-table slot — the VMA still holds a reference. The fault handler readi()'s from that file. Without filedup, close would free the file and the fault would read freed memory." },
+    { q: "VMA covers va 0x4000..0x8000. munmap(0x5000, 0x1000) punches the middle. Allowed? How many VMAs after?",
+      a: "Not allowed in the xv6 lab — munmap only shrinks from an end (prefix or suffix), never punches a hole. A middle unmap would require splitting one VMA into two; the lab's NVMA-slot model doesn't support it. Legal calls leave 1 VMA (shrunk)." },
+    { q: "MAP_SHARED page was faulted in, written, marked dirty. When do the bytes reach the file?",
+      a: "At munmap (or process exit): walk the mapped pages, and for each dirty page in a MAP_SHARED region, writei() it back to the file at offset (va - vma->addr + vma->offset). MAP_PRIVATE pages are never written back — changes are discarded." }
   ],
   "memory-barrier": [
-    { q: "Thread 0: x=1; __sync_synchronize(); y=1; Thread 1: while(y==0); print x; Without fence, Thread 1 may print 0. Why?" },
-    { q: "acquire(&lk) includes __sync_synchronize() after reading lk->locked. Why after, not before?" },
-    { q: "release(&lk) includes __sync_synchronize() before writing lk->locked=0. Why before?" }
+    { q: "T0: x=1; fence; y=1;  T1: while(y==0){} print x;  Without T0's fence, T1 can print 0. By what mechanism?",
+      a: "T0's stores sit in a store buffer / can be reordered, so y=1 can become visible to T1 before x=1 does. T1 sees y==1, exits the loop, reads the still-old x=0. The fence forces x=1 to be globally visible before y=1." },
+    { q: "acquire() does the test-and-set, THEN __sync_synchronize(). Why is the fence AFTER the lock is taken, not before?",
+      a: "To stop loads/stores inside the critical section from being hoisted ABOVE the lock acquisition. The fence after acquire pins all protected accesses to happen after you own the lock. (acquire-semantics: nothing moves up past it.)" },
+    { q: "release() does __sync_synchronize() BEFORE writing locked=0. Why before, not after?",
+      a: "To force every store inside the critical section to be globally visible BEFORE the lock is released. If locked=0 became visible first, another core could acquire and read half-written data. (release-semantics: nothing moves down past it.)" }
   ]
 };
 
@@ -1083,11 +1116,26 @@ function renderLessons(activeId = lessons[0].id) {
 
   /* grill questions */
   if (lessonGrills[lesson.id]) {
-    view.appendChild(el("h4", "", "Grill (real numbers)"));
+    view.appendChild(el("h4", "", "Grill (answer in real numbers)"));
     const grillList = el("ol", "grill-list");
-    lessonGrills[lesson.id].forEach((grill, i) => {
+    lessonGrills[lesson.id].forEach((grill) => {
       const li = el("li", "grill-item");
-      li.textContent = grill.q;
+      li.appendChild(el("span", "grill-q", grill.q));
+      if (grill.a) {
+        const reveal = document.createElement("button");
+        reveal.className = "reveal-btn";
+        reveal.type = "button";
+        reveal.textContent = "Show answer";
+        const ans = el("span", "blank-answer hidden");
+        ans.textContent = grill.a;
+        reveal.addEventListener("click", () => {
+          ans.classList.toggle("hidden");
+          reveal.textContent = ans.classList.contains("hidden") ? "Show answer" : "Hide";
+        });
+        li.appendChild(document.createElement("br"));
+        li.appendChild(reveal);
+        li.appendChild(ans);
+      }
       grillList.appendChild(li);
     });
     view.appendChild(grillList);

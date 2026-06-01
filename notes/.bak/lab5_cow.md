@@ -1,8 +1,8 @@
-Lab 5 — Copy-on-Write Fork
+# Lab 5 — Copy-on-Write Fork
 
-The problem: today's fork is wildly wasteful
+## The problem: today's fork is wildly wasteful
 
-What fork does right now
+### What fork does right now
 
 ```
 fork()  in kernel/proc.c
@@ -18,7 +18,7 @@ uvmcopy()  in kernel/vm.c
       mappages(child, i, 4096, mem, flags)
 ```
 
-Cost per chunk
+### Cost per chunk
 
 ```
   kalloc():    ~50 cycles (free-list pop)
@@ -28,7 +28,7 @@ Cost per chunk
   per chunk:   ≈ 4176 cycles
 ```
 
-Cost for a whole process
+### Cost for a whole process
 
 ```
   parent has N chunks, sz = N × 4096
@@ -45,9 +45,9 @@ Cost for a whole process
 A `java` process forking takes hundreds of millions of cycles just to
 copy its memory. That is **before** any of the child's work starts.
 
-The common case makes the waste worse
+## The common case makes the waste worse
 
-Pattern 1: fork-then-exec
+### Pattern 1: fork-then-exec
 
 ```
   user code:
@@ -72,14 +72,14 @@ This is the dominant fork use-case in Unix. The shell forks-then-execs
 for every command you type. Servers fork-then-exec for every connection.
 `make` forks-then-execs for every rule.
 
-Pattern 2: fork-then-exit (rare but cheap to support)
+### Pattern 2: fork-then-exit (rare but cheap to support)
 
 ```
   child does almost nothing, exits.
   parent's memory was copied for the child even though child never used it.
 ```
 
-Pattern 3: long-running fork (the only case where copying IS useful)
+### Pattern 3: long-running fork (the only case where copying IS useful)
 
 ```
   parent forks. both run for a long time. both write to many chunks.
@@ -90,7 +90,7 @@ Pattern 3: long-running fork (the only case where copying IS useful)
   was still waste.
 ```
 
-Visual: the waste
+## Visual: the waste
 
 ```
 PARENT MEMORY (sz = 40 KB = 10 chunks)
@@ -131,7 +131,7 @@ THEN: child calls exec("/bin/ls").
      - benefit to user program: ZERO
 ```
 
-What COW changes
+## What COW changes
 
 ```
 COW FORK: copy NOTHING. share. mark read-only.
@@ -186,7 +186,7 @@ cost comparison for fork+exec:
   real-world impact: bash startup, make build trees, server accept loops.
 ```
 
-Pieces to build
+## Pieces to build
 
 ```
 1. refcount table over physical chunks
@@ -233,7 +233,7 @@ Pieces to build
    only put chunk back on free-list when refcount drops to 0.
 ```
 
-PTE bit budget
+## PTE bit budget
 
 ```
 RISC-V Sv39 PTE layout (low end):
@@ -253,7 +253,7 @@ RISC-V Sv39 PTE layout (low end):
   #define PTE_COW (1L << 8)
 ```
 
-Gotchas
+## Gotchas
 
 ```
 1. fork-time: must clear PTE_W AND keep PTE_R.
@@ -281,7 +281,7 @@ Gotchas
    while other trees still arrow at it.
 ```
 
-Test target
+## Test target
 
 ```
 make qemu
@@ -293,7 +293,7 @@ expected: all three sub-tests pass:
   file      — fork during file read, no double-free
 ```
 
-Full Trace: uvmcopy for 10-page fork
+## Full Trace: uvmcopy for 10-page fork
 
 ```
 SETUP

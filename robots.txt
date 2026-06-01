@@ -1,4 +1,11 @@
 User-agent: *
 Allow: /
+Disallow: /assets/
+Disallow: /.git/
+Disallow: /.github/
+Disallow: /labs/
+Disallow: /notes/
+
+Crawl-delay: 2
 
 Sitemap: https://os-from-first-principles.github.io/sitemap.xml

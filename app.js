@@ -58,6 +58,12 @@ const modules = [
     short: "Map file bytes into a process and write them back when required.",
     trap: "munmap can split a range. Dirty pages and file offsets decide what gets written.",
     tags: ["VMA", "fault", "file"]
+  },
+  {
+    title: "Memory Order",
+    short: "Barriers, cache lines, store buffers, TSO.",
+    trap: "Loads can pass earlier loads, stores can pass earlier stores, but stores cannot pass earlier loads.",
+    tags: ["fence", "acquire", "release"]
   }
 ];
 
@@ -608,6 +614,55 @@ if (r_scause() == 13 || r_scause() == 15) {
   if (v->prot & PROT_WRITE) perm |= PTE_W;
   mappages(p->pagetable, va, PGSIZE, (uint64)mem, perm);
 }`
+  },
+  {
+    id: "memory-barrier",
+    title: "Memory Barriers",
+    subtitle: "Store buffers, cache lines, TSO",
+    level: "advanced",
+    summary:
+      "Processors reorder loads and stores. Barriers enforce ordering: acquire before load, release after store, fence both ways.",
+    diagram: `
+Thread 0          Thread 1
+-------          -------
+x = 1;           while (y == 0);
+__sync_synchronize();
+y = 1;           print x;
+
+Without fence: Thread 1 may print 0 (x not visible).
+With fence: Thread 1 prints 1 (x visible before y).
+`,
+    beats: [
+      "Loads can pass earlier loads, stores can pass earlier stores.",
+      "Stores cannot pass earlier loads (TSO).",
+      "acquire barrier: no later loads/stores can pass before this load.",
+      "release barrier: no earlier loads/stores can pass after this store.",
+      "full fence (__sync_synchronize): no reordering across it."
+    ],
+    blanks: [
+      {
+        prompt: "In xv6, e1000_transmit uses ________ before writing E1000_TDT.",
+        answer: "__sync_synchronize()"
+      },
+      {
+        prompt: "acquire(&lk) includes a ________ barrier after reading lk->locked.",
+        answer: "acquire"
+      },
+      {
+        prompt: "release(&lk) includes a ________ barrier before writing lk->locked = 0.",
+        answer: "release"
+      }
+    ],
+    code: `// acquire: load-acquire
+__sync_synchronize();
+while(__sync_lock_test_and_set(&lk->locked, 1) != 0)
+  ;
+__sync_synchronize();
+
+// release: store-release  
+__sync_synchronize();
+lk->locked = 0;
+__sync_synchronize();`
   }
 ];
 
@@ -671,6 +726,12 @@ const assignments = [
     output: "Implement mmap and munmap with file-backed lazy faults.",
     proof: "mmaptest and grade-lab-mmap pass.",
     traps: ["partial unmap splits a range", "dirty page writeback rules", "file refcount lifetime"]
+  },
+  {
+    title: "A11 - Memory Barriers",
+    output: "Add acquire/release barriers to lock implementation.",
+    proof: "Lock ordering test passes on 8 cores.",
+    traps: ["acquire after load", "release before store", "fence both ways"]
   }
 ];
 
@@ -734,6 +795,12 @@ const localCode = [
     status: "supported",
     path: "labs/xv6-labs-2021 origin/mmap",
     proof: "mmaptest.c and grade-lab-mmap exist."
+  },
+  {
+    assignment: "A11 memory-barrier",
+    status: "concept",
+    path: "kernel/spinlock.c",
+    proof: "Add acquire/release barriers to spinlock implementation."
   }
 ];
 
@@ -797,6 +864,14 @@ const drills = [
   {
     q: "mmap(0, 4096, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0). Then close(fd). Then access the mapped page. What happens?",
     a: "Works fine IF mmap called filedup(f) to increment the file refcount. close(fd) decrements it to 1 (VMA still holds a ref). The fault handler reads from the file normally. Without filedup, close drops the refcount to 0, file is freed, fault handler dereferences garbage."
+  },
+  {
+    q: "Thread 0: x = 1; __sync_synchronize(); y = 1; Thread 1: while (y == 0); print x; Without fence, Thread 1 may print 0. Why?",
+    a: "Store buffer reordering. Thread 0's store to x may stay in its store buffer while y = 1 reaches memory. Thread 1 sees y = 1 but x = 0. Fence flushes store buffer before y = 1."
+  },
+  {
+    q: "acquire(&lk) includes __sync_synchronize() after reading lk->locked. Why after, not before?",
+    a: "acquire barrier ensures no later loads/stores pass before this load. Must be after reading lk->locked to prevent reordering of critical section code before the lock is acquired."
   }
 ];
 
@@ -852,7 +927,7 @@ const labLinks = {
 /* assignment title -> lab link mapping */
 const assignmentLabMap = {
   A1: "unix-surface", A2: "syscall-path", A3: "lookup-tree", A4: "traps",
-  A5: "cow", A6: "uthread", A7: "net", A8: "lock-lab", A9: "filesystem", A10: "mmap"
+  A5: "cow", A6: "uthread", A7: "net", A8: "lock-lab", A9: "filesystem", A10: "mmap", A11: "memory-barrier"
 };
 
 /* -- render functions --------------------------------------------------- */

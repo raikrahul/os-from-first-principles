@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Checkout - OS From First Principles</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html">
+      <span class="brand-mark">OS</span>
+      <span><strong>OS First Principles</strong></span>
+    </a>
+  </header>
+  
+  <main class="checkout">
+    <h1>Checkout</h1>
+    
+    <form id="checkout-form">
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" required>
+      </div>
+      
+      <div class="form-group">
+        <label>Card Details</label>
+        <div class="card-input">
+          <input type="text" placeholder="1234 5678 9012 3456" required>
+          <input type="text" placeholder="MM/YY" required>
+          <input type="text" placeholder="CVC" required>
+        </div>
+      </div>
+      
+      <button type="submit" class="button primary">Pay $99</button>
+      <p class="note">You'll receive certificate and access within 24 hours.</p>
+    </form>
+  </main>
+  
+  <script>
+    document.getElementById('checkout-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      alert('Payment processed (demo). Certificate email sent.');
+      window.location.href = 'certificate.html';
+    });
+  </script>
+</body>
+</html>

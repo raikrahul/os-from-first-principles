@@ -217,6 +217,100 @@ input {
   text-decoration: underline;
 }
 
+/* Technical code blocks */
+pre {
+  background: var(--code);
+  color: var(--code-ink);
+  padding: 1.5rem;
+  border-radius: var(--radius);
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 1.5rem 0;
+  border: 1px solid var(--line);
+}
+
+/* Pricing */
+.pricing, .checkout, .certificate {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.plans {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  margin: 2rem 0;
+}
+
+.plan {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 2rem;
+  background: var(--panel);
+}
+
+.plan.featured {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+.price {
+  font-size: 3rem;
+  font-weight: 800;
+  margin: 1rem 0;
+}
+
+.form-group {
+  margin: 1.5rem 0;
+}
+
+.card-input {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 0.5rem;
+}
+
+.certificate-card {
+  border: 2px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 3rem;
+  text-align: center;
+  background: var(--panel);
+  max-width: 600px;
+  margin: 2rem auto;
+}
+
+.signature {
+  margin-top: 3rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9em;
+  background: var(--panel-2);
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+}
+
+/* Memory diagram styling */
+.memory-diagram {
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--code);
+  color: var(--code-ink);
+  padding: 1rem;
+  border-radius: var(--radius);
+  white-space: pre;
+  overflow-x: auto;
+  margin: 1rem 0;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
 .button.primary {
   background: var(--ink);
   border-color: var(--ink);

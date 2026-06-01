@@ -43,7 +43,9 @@
         <a href="#assignments">Assignments</a>
         <a href="#local-code">Local Code</a>
         <a href="#drills">Drills</a>
+        <a href="#technical">Technical</a>
         <a href="#style">Style</a>
+        <a href="pricing.html">Pricing</a>
         <a href="mit_os_2025/schedule.html" target="_blank">MIT Schedule</a>
         <a href="mit_os_2025/docs/xv6-book-2025.pdf" target="_blank">xv6 Book</a>
       </nav>
@@ -149,6 +151,32 @@
             <button class="icon-button" id="nextDrill" type="button" aria-label="Next drill">›</button>
           </div>
           <pre id="drillAnswer" class="answer-box" hidden></pre>
+        </div>
+      </section>
+
+      <section class="band" id="technical">
+        <div class="section-head">
+          <p class="eyebrow">Technical Depth</p>
+          <h2>Memory Barriers & Cache Coherence</h2>
+          <p>Store buffers, cache lines, TSO, acquire/release semantics.</p>
+        </div>
+        <div class="memory-diagram">
+Thread 0          Thread 1
+-------          -------
+x = 1;           while (y == 0);
+__sync_synchronize();
+y = 1;           print x;
+
+Without fence: Thread 1 may print 0 (x not visible).
+With fence: Thread 1 prints 1 (x visible before y).
+        </div>
+        <div class="assignment-grid">
+          <article class="assignment-card">
+            <h3>A11 - Memory Barriers</h3>
+            <p>Add acquire/release barriers to lock implementation.</p>
+            <p><strong>Proof:</strong> Lock ordering test passes on 8 cores.</p>
+            <p><strong>Trap:</strong> acquire after load, release before store, fence both ways.</p>
+          </article>
         </div>
       </section>
 

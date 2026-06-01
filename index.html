@@ -39,6 +39,7 @@
       <button class="hamburger" id="menuToggle" type="button" aria-label="Toggle navigation">&#9776;</button>
       <nav class="nav" id="mainNav" aria-label="Primary">
         <a href="#course">Course</a>
+        <a href="#setup">Setup</a>
         <a href="#lessons">Lessons</a>
         <a href="#assignments">Assignments</a>
         <a href="#local-code">Local Code</a>
@@ -152,6 +153,20 @@
           </div>
           <pre id="drillAnswer" class="answer-box" hidden></pre>
         </div>
+      </section>
+
+      <section class="band" id="setup">
+        <div class="section-head">
+          <p class="eyebrow">Setup</p>
+          <h2>Get the xv6 labs</h2>
+          <p>Clone the official MIT 6.S081 labs and build them locally.</p>
+        </div>
+        <div class="memory-diagram">
+$ git clone git://g.csail.mit.edu/xv6-labs-2025
+$ cd xv6-labs-2025
+$ make qemu
+        </div>
+        <p>Each lesson corresponds to a lab branch. Switch with <code>git checkout util</code>, <code>git checkout syscall</code>, etc.</p>
       </section>
 
       <section class="band" id="technical">

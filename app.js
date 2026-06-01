@@ -403,7 +403,7 @@ trap-return (userret):
       "ecall saves NOTHING to memory. It sets scause=8, copies pc to sepc, and flips to S-mode. uservec must sacrifice one register to get the TRAPFRAME base.",
       "argint(0, &fd) reads p->trapframe->a0 — the SAVED register, not the live one. The kernel runs on a different stack with different registers.",
       "The dispatcher line runs AFTER your handler returns. If sigreturn restores a0 and then returns 0, the dispatcher overwrites the restored value with 0.",
-      "== binds tighter than & in C. mask & 1 << num parses as (mask & 1) << num. Correct: mask & (1 << num)."
+      "<< binds tighter than & in C, so mask & 1 << num already parses as mask & (1 << num). The real precedence trap is ==, which binds tighter than &: mask & 1 == 0 parses as mask & (1 == 0), almost never what you meant."
     ],
     blanks: [
       { prompt: "syscall dispatch: num = p->trapframe->________;", answer: "a7" },
@@ -924,6 +924,65 @@ const labLinks = {
   mmap: "mit_os_2025/labs/mmap.html"
 };
 
+/* lesson grill questions */
+const lessonGrills = {
+  "unix-surface": [
+    { q: "argv[0] = \"pingpong\", argv[1] = NULL. argc = ?" },
+    { q: "pipe(p); fork(); parent close(p[1]); child close(p[0]); child write(p[1], \"x\", 1); parent read(p[0], buf, 1). Does read return 1 or block?" },
+    { q: "strcmp(\"hello\", \"hello\") returns 0. \"hello\" == \"hello\" returns ?" }
+  ],
+  "syscall-path": [
+    { q: "p->trapframe->a7 = 13 (pause). p->trapframe->a0 = 5. sys_pause returns 0. What value does the user see in a0 after syscall returns?" },
+    { q: "mask = 0x20 (1<<5). num = 5. mask & 1 << num = ?" },
+    { q: "argint(0, &fd) reads from p->trapframe->a0. If sigreturn restores a0=42, then returns 0, what does the user see?" }
+  ],
+  "lookup-tree": [
+    { q: "PTE = 0x8002_0043 (V=1, R=1, W=0, X=0). PTE2PA(PTE) = ?" },
+    { q: "walk returns &pagetable[PX(0, va)]. If you write *pte = PA2PTE(pa) | perm, what happens to the old PTE?" },
+    { q: "mappages panics if *pte & PTE_V. Why not just overwrite?" }
+  ],
+  "traps": [
+    { q: "backtrace: fp = 0x3fffffe0, bottom = 0x3ffff000, top = 0x40000000. Is fp valid?" },
+    { q: "alarm: p->interval = 10, p->ticks = 9, timer interrupt. p->alarm_on = 0. What happens?" },
+    { q: "sigreturn copies p->tf_backup to p->trapframe. If a second alarm fires during handler, what overwrites?" }
+  ],
+  "cow": [
+    { q: "refcount[pa] = 2. parent writes to va->pa. fault handler sees PTE_COW. What does it do?" },
+    { q: "copyout(pagetable, useraddr, kernelbuf, n). useraddr's page is COW. Does fault fire?" },
+    { q: "refcount[pa] = 1. write fault. *pte |= PTE_W, *pte &= ~PTE_COW. Why not allocate?" }
+  ],
+  "uthread": [
+    { q: "thread_create sets t->ctx.ra = (uint64)func. Why not t->ctx.ra = (uint64)thread_schedule?" },
+    { q: "switch saves old, loads new, ret. If current_thread = next before switch, what runs after ret?" },
+    { q: "Slot 0 = scheduler. New worker starts at slot 1. Why not 0?" }
+  ],
+  "net": [
+    { q: "tx_ring[i].status = 0x03, DD = 0x01. Is slot i reusable?" },
+    { q: "tx_mbufs[i] = 0x8002_0000, tx_ring[i].addr = 0x8002_0040. Which goes to mbuffree?" },
+    { q: "regs[E1000_TDT] = i. Is this DRAM or card register?" }
+  ],
+  "lock-lab": [
+    { q: "kmem[NCPU]. kfree pushes onto kmem[cpuid()]. If scheduler moves core between cpuid() and acquire, what breaks?" },
+    { q: "bcache bucket 3 has lock3, bucket 8 has lock8. Core A wants block 42 (bucket3), Core B wants block 99 (bucket8). Do they collide?" },
+    { q: "bget miss: victim in bucket2, home bucket8. Which lock first?" }
+  ],
+  "filesystem": [
+    { q: "inode addrs[NDIRECT] = 12 direct blocks. addrs[NDIRECT] points to indirect block. How many total blocks max?" },
+    { q: "symlink(\"a\", \"b\"). open(\"b\") reads inode type = T_SYMLINK. What next?" },
+    { q: "itrunc frees data blocks but not L2 pointer blocks. Symptom?" }
+  ],
+  "mmap": [
+    { q: "mmap(0, 4096, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0). Then close(fd). Then access page. What happens?" },
+    { q: "munmap splits a VMA range. va=0x4000..0x8000, munmap(0x5000, 0x1000). How many VMAs after?" },
+    { q: "dirty page writeback: page fault sets PTE_W, marks dirty. When does write to file happen?" }
+  ],
+  "memory-barrier": [
+    { q: "Thread 0: x=1; __sync_synchronize(); y=1; Thread 1: while(y==0); print x; Without fence, Thread 1 may print 0. Why?" },
+    { q: "acquire(&lk) includes __sync_synchronize() after reading lk->locked. Why after, not before?" },
+    { q: "release(&lk) includes __sync_synchronize() before writing lk->locked=0. Why before?" }
+  ]
+};
+
 /* assignment title -> lab link mapping */
 const assignmentLabMap = {
   A1: "unix-surface", A2: "syscall-path", A3: "lookup-tree", A4: "traps",
@@ -1021,6 +1080,18 @@ function renderLessons(activeId = lessons[0].id) {
 
   view.appendChild(el("h4", "", "Assembled Code"));
   view.appendChild(el("pre", "", lesson.code.trim()));
+
+  /* grill questions */
+  if (lessonGrills[lesson.id]) {
+    view.appendChild(el("h4", "", "Grill (real numbers)"));
+    const grillList = el("ol", "grill-list");
+    lessonGrills[lesson.id].forEach((grill, i) => {
+      const li = el("li", "grill-item");
+      li.textContent = grill.q;
+      grillList.appendChild(li);
+    });
+    view.appendChild(grillList);
+  }
 }
 
 function renderAssignments() {

@@ -1,8 +1,8 @@
 const modules = [
   {
     title: "Unix Surface",
-    short: "Arguments, files, pipes, fork, exec, wait.",
-    trap: "argv[0] exists. argv[argc] is NULL. A pipe read can wait forever if a writer still exists.",
+    short: "argv, fd, pipe, fork, exec, wait.",
+    trap: "argv[0] exists. argv[argc] is NULL. A pipe read waits forever if a writer still exists.",
     tags: ["argv", "fd", "pipe"]
   },
   {

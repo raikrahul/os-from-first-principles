@@ -961,7 +961,15 @@ const lessonGrills = {
     { q: "pipe(p); fork(); parent close(p[1]); child close(p[0]); child write(p[1],\"x\",1); parent read(p[0],buf,1). Does read return 1 or block?",
       a: "Returns 1. The child's write puts 1 byte in the pipe buffer; the parent's read drains it. If the child had ALSO closed p[1] (its write end) without writing, AND the parent held no write end, read would return 0 (EOF). EOF needs ALL write ends closed." },
     { q: "strcmp(\"hello\",\"hello\") returns 0. \"hello\" == \"hello\" evaluates what?",
-      a: "Compares two pointers (addresses of the string literals), NOT the bytes. May be 1 if the compiler pools identical literals, may be 0 if not — undefined to rely on. Always use strcmp; ==0 means equal there." }
+      a: "Compares two pointers (addresses of the string literals), NOT the bytes. May be 1 if the compiler pools identical literals, may be 0 if not — undefined to rely on. Always use strcmp; ==0 means equal there." },
+    { q: "find(\"./a/b\", \"b\"); stat does not store the filename. How do you extract \"b\" from the path string to compare it?",
+      a: "Scan backwards for the last '/', then advance one char. (e.g. fmtname() in xv6). You cannot just use basename directly without string manipulation." },
+    { q: "xargs: You read chars into a buf. When you see a space (' '), what do you do to the buf?",
+      a: "Replace the space with a null terminator ('\\0'), and record the start of the next character as the next argument pointer in argv." },
+    { q: "xargs calls fork() then exec() for each line. Why must the parent call wait() before continuing?",
+      a: "If the parent doesn't wait, it will overwrite the shared argument buffer with the next line while the child is still executing, corrupting the child's arguments." },
+    { q: "What does n = 0 mean when reading from stdin in a loop?",
+      a: "It means EOF (End of File). read() returns 0 when there are no more bytes to read because the write end of the pipe (or file) is closed." }
   ],
   "syscall-path": [
     { q: "p->trapframe->a7 = 13 (pause). p->trapframe->a0 = 5. sys_pause returns 0. What does the user see in a0?",

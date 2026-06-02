@@ -924,6 +924,35 @@ const labLinks = {
   mmap: "mit_os_2025/labs/mmap.html"
 };
 
+const noteLinks = {
+  "unix-surface": { file: "notes/ch01_foundation.md", label: "Ch 1: Unix Foundation" },
+  "syscall-path": { file: "notes/ch02_syscall_path.md", label: "Ch 2: Syscall Path" },
+  "lookup-tree": { file: "notes/ch03_address_translation.md", label: "Ch 3: Address Translation" },
+  traps: { file: "notes/ch04_traps_backtrace_alarm.md", label: "Ch 4: Traps & Alarm" },
+  cow: { file: "notes/ch05_cow_fork.md", label: "Ch 5: COW Fork" },
+  uthread: { file: "notes/ch06_user_threads.md", label: "Ch 6: User Threads" },
+  net: { file: "notes/ch07_net_driver.md", label: "Ch 7: Net Driver" },
+  "lock-lab": { file: "notes/ch08_lock_lab.md", label: "Ch 8: Lock Lab" },
+  filesystem: { file: "notes/ch09_filesystem.md", label: "Ch 9: Filesystem" },
+  mmap: { file: "notes/ch10_mmap.md", label: "Ch 10: mmap" },
+  "memory-barrier": { file: "notes/ch11_memory_order.md", label: "Ch 11: Memory Order" }
+};
+
+const allNotes = [
+  { file: "notes/ch01_foundation.md", title: "Ch 1: Unix Foundation", desc: "argv, fd, pipe, fork, exec, wait — the surface layer" },
+  { file: "notes/ch02_syscall_path.md", title: "Ch 2: Syscall Path", desc: "ecall, trapframe save, dispatcher, a0 return" },
+  { file: "notes/ch03_address_translation.md", title: "Ch 3: Address Translation", desc: "Three-level page table walk, PTE flags, satp" },
+  { file: "notes/ch04_traps_backtrace_alarm.md", title: "Ch 4: Traps & Alarm", desc: "Frame pointer walk, trapframe surgery, sigreturn" },
+  { file: "notes/ch05_cow_fork.md", title: "Ch 5: COW Fork", desc: "Share-then-copy, refcounts, copyout trap" },
+  { file: "notes/ch06_user_threads.md", title: "Ch 6: User Threads", desc: "14 callee-saved registers, cooperative switch, ret into another flow" },
+  { file: "notes/ch07_net_driver.md", title: "Ch 7: Net Driver", desc: "TX/RX descriptor rings, DD bitmask, mbuf lifecycle" },
+  { file: "notes/ch08_lock_lab.md", title: "Ch 8: Lock Lab", desc: "Per-CPU freelists, hash-partitioned bcache, steal protocol" },
+  { file: "notes/ch09_filesystem.md", title: "Ch 9: Filesystem", desc: "Doubly-indirect bmap, itrunc freeing, symlink depth guard" },
+  { file: "notes/ch10_mmap.md", title: "Ch 10: mmap", desc: "VMA lazy faults, filedup lifetime, partial unmap, dirty writeback" },
+  { file: "notes/ch11_memory_order.md", title: "Ch 11: Memory Order", desc: "Store buffers, acquire/release fences, __sync_synchronize" },
+  { file: "notes/LESSON_MAKING_GUIDE.md", title: "Lesson Making Guide", desc: "How each lesson is structured: state, blank, failure, code, grill" }
+];
+
 /* lesson grill questions */
 const lessonGrills = {
   "unix-surface": [
@@ -1068,10 +1097,16 @@ function renderLessons(activeId = lessons[0].id) {
   const titleRow = el("div", "lesson-title-row");
   titleRow.appendChild(el("h3", "", lesson.title));
   if (labLinks[lesson.id]) {
-    const labLink = el("a", "lab-link", "MIT Lab Specification");
+    const labLink = el("a", "lab-link", "MIT Lab Spec");
     labLink.href = labLinks[lesson.id];
     labLink.target = "_blank";
     titleRow.appendChild(labLink);
+  }
+  if (noteLinks[lesson.id]) {
+    const noteLink = el("a", "lab-link", noteLinks[lesson.id].label);
+    noteLink.href = noteLinks[lesson.id].file;
+    noteLink.target = "_blank";
+    titleRow.appendChild(noteLink);
   }
   view.appendChild(titleRow);
   view.appendChild(el("p", "", lesson.summary));
@@ -1268,6 +1303,28 @@ function updateProgressBadges() {
   badge.textContent = `${done}/${total} lessons read`;
 }
 
+/* -- render notes ------------------------------------------------------- */
+
+function renderNotes() {
+  const root = document.getElementById("notesGrid");
+  if (!root) return;
+  allNotes.forEach((note) => {
+    const card = el("article", "code-card");
+    const link = document.createElement("a");
+    link.href = note.file;
+    link.target = "_blank";
+    link.className = "note-title-link";
+    link.textContent = note.title;
+    card.appendChild(link);
+    card.appendChild(el("p", "", note.desc));
+    const dl = el("a", "lab-link-small", "Open markdown");
+    dl.href = note.file;
+    dl.target = "_blank";
+    card.appendChild(dl);
+    root.appendChild(card);
+  });
+}
+
 /* -- init --------------------------------------------------------------- */
 
 renderModules();
@@ -1276,4 +1333,5 @@ renderAssignments();
 renderCodeAudit();
 renderDrill(false);
 renderStyle();
+renderNotes();
 updateProgressBadges();

@@ -203,6 +203,28 @@ input {
   border-bottom-color: var(--accent);
 }
 
+.note-title-link {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--accent);
+  text-decoration: none;
+  margin-bottom: 6px;
+}
+
+.note-title-link:hover {
+  text-decoration: underline;
+}
+
+.lesson-title-row {
+  display: flex;
+  justify-content: flex-start;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
 .lab-link-small {
   font-size: 0.75rem;
   color: var(--accent);

@@ -1025,7 +1025,15 @@ const lessonGrills = {
     { q: "Core A wants block 42 (42%13=3, lock3), Core B wants block 99 (99%13=8, lock8). Do they serialize?",
       a: "No — different buckets, different gate-cells. Both run fully parallel. That parallelism is exactly what bcachetest measures; one global lock would serialize them and fail the test." },
     { q: "bget miss: victim found in bucket 2, home bucket is 8. Which lock do you grab first, and why?",
-      a: "lock2 first (lower index), then lock8. Every core grabs the lower-index bucket lock first, so two evictors can never each hold one and wait on the other — no deadlock cycle. After locking, re-check the victim is still refcnt==0; if not, rescan." }
+      a: "lock2 first (lower index), then lock8. Every core grabs the lower-index bucket lock first, so two evictors can never each hold one and wait on the other — no deadlock cycle. After locking, re-check the victim is still refcnt==0; if not, rescan." },
+    { q: "Lock lab `statistics.c` has `int statistics()`, but no `main()`. Should it go in UPROGS or ULIB in the Makefile?",
+      a: "ULIB. If you put it in UPROGS, the linker will fail complaining about a missing `main` function. `statistics()` is a library function called by user tests, not a standalone binary." },
+    { q: "The kernel registers `devsw[STATS]`. You run the test but `open(\"statistics\")` fails. Why?",
+      a: "The device file doesn't exist in the file system root. You must add `mknod(\"statistics\", STATS, 0)` to `user/init.c` so the node is created at boot, allowing user programs to open it." },
+    { q: "You open \"statistics\" successfully, but `read()` returns 0 bytes. You check `stats.c` and see `statsread()` is inside `#ifdef LAB_LOCK`. What's missing?",
+      a: "The `CFLAGS += -DLAB_LOCK` flag in the Makefile. Without it, the preprocessor strips out the `statsread` logic, compiling it as a no-op that silently returns 0." },
+    { q: "For bucket list heads, you used `struct buf head[13]`. The logic works, but `kalloctest` test2 fails on memory usage. Why?",
+      a: "`struct buf` contains a 1024-byte `data` array. `13 * 1024` = 13KB (4 pages) wasted on list heads that only need prev/next pointers. Fix: define a lightweight `struct bhead` that pads exactly to the pointer offsets, omitting the data array." }
   ],
   "filesystem": [
     { q: "inode has 11 direct + 1 singly-indirect (256) + 1 doubly-indirect. Max blocks? In bytes at BSIZE=1024?",

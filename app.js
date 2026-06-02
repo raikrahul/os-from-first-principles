@@ -1202,22 +1202,6 @@ function renderAssignments() {
   });
 }
 
-// FIX: paths are local filesystem references, not web URLs
-// Rendering as plain <code> instead of broken <a> tags
-function renderCodeAudit() {
-  const root = document.getElementById("codeAudit");
-  localCode.forEach((item) => {
-    const card = el("article", "code-card");
-    card.appendChild(el("span", "status", item.status));
-    card.appendChild(el("h3", "", item.assignment));
-    const path = el("p");
-    path.innerHTML = `<strong>Where:</strong> <code class="code-path">${escapeHtml(item.path)}</code>`;
-    card.appendChild(path);
-    card.appendChild(el("p", "", item.proof));
-    root.appendChild(card);
-  });
-}
-
 let drillIndex = 0;
 
 function renderDrill(show = false) {
@@ -1227,15 +1211,7 @@ function renderDrill(show = false) {
   answer.hidden = !show;
 }
 
-function renderStyle() {
-  const root = document.getElementById("styleGrid");
-  styleRules.forEach((rule) => {
-    const card = el("article", "style-card");
-    card.appendChild(el("h3", "", rule.title));
-    card.appendChild(el("p", "", rule.text));
-    root.appendChild(card);
-  });
-}
+
 
 function escapeHtml(value) {
   return value
@@ -1330,8 +1306,6 @@ function renderNotes() {
 renderModules();
 initRouting();
 renderAssignments();
-renderCodeAudit();
 renderDrill(false);
-renderStyle();
 renderNotes();
 updateProgressBadges();

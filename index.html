@@ -5,71 +5,63 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="A low-filler operating systems course that teaches xv6-style labs from concrete machine states first."
+      content="A self-contained xv6 operating systems course. 11 lessons, 11 assignments, 15 drills, 11 chapter notes. No filler."
     />
     <meta name="theme-color" content="#171915" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Operating Systems From First Principles" />
+    <meta property="og:title" content="OS From First Principles" />
     <meta
       property="og:description"
-      content="A do-the-work operating systems course: cells, rows, traps, and tests before jargon."
+      content="Self-contained xv6 OS course: state, blank, failure, code, grill."
     />
     <meta property="og:image" content="assets/og-card.svg" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Operating Systems From First Principles" />
+    <meta name="twitter:title" content="OS From First Principles" />
     <meta
       name="twitter:description"
-      content="A low-filler OS course for doers: derive xv6 labs from concrete machine states."
+      content="Self-contained xv6 OS course: state, blank, failure, code, grill."
     />
     <meta name="twitter:image" content="assets/og-card.svg" />
-    <title>Operating Systems From First Principles</title>
+    <title>OS From First Principles</title>
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="site.webmanifest" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <header class="topbar">
-      <a class="brand" href="#home" aria-label="Operating Systems From First Principles">
+      <a class="brand" href="#home">
         <span class="brand-mark" aria-hidden="true">OS</span>
         <span>
-          <strong>Operating Systems</strong>
-          <small>from first principles</small>
+          <strong>OS From First Principles</strong>
+          <small>xv6 course</small>
         </span>
       </a>
       <button class="hamburger" id="menuToggle" type="button" aria-label="Toggle navigation">&#9776;</button>
       <nav class="nav" id="mainNav" aria-label="Primary">
         <a href="#course">Course</a>
-        <a href="#setup">Setup</a>
         <a href="#lessons">Lessons</a>
         <a href="#assignments">Assignments</a>
-        <a href="#local-code">Local Code</a>
         <a href="#drills">Drills</a>
         <a href="#notes">Notes</a>
-        <a href="#technical">Technical</a>
-        <a href="#style">Style</a>
-        <a href="pricing.html">Pricing</a>
-        <a href="mit_os_2025/schedule.html" target="_blank">MIT Schedule</a>
-        <a href="mit_os_2025/docs/xv6-book-2025.pdf" target="_blank">xv6 Book</a>
       </nav>
     </header>
 
     <main>
       <section class="hero" id="home">
         <div class="hero-copy">
-          <p class="eyebrow">The last operating systems course you'll ever need.</p>
-          <h1>Learn xv6 by breaking it, fixing it, and understanding every byte.</h1>
+          <h1>Learn xv6 by breaking it.</h1>
           <p class="lede">
-            No MBA words. No theory without code. You start with cells, pointers, and failure cases.
-            Names come after you've seen the machine break. You derive the code one line at a time.
+            Each lesson starts with concrete machine state. You fill in the missing line.
+            Then you see exactly what breaks when you get it wrong.
           </p>
-          <div class="proof-strip" aria-label="Project proof points">
-            <span>11 modules</span>
+          <div class="proof-strip" aria-label="Course contents">
             <span>11 lessons</span>
-            <span>33 grill questions</span>
+            <span>11 assignments</span>
+            <span>15 drills</span>
+            <span>11 chapter notes</span>
           </div>
           <div class="hero-actions">
-            <a class="button primary" href="#setup">Get xv6</a>
-            <a class="button" href="#lessons">Read lessons</a>
+            <a class="button primary" href="#lessons">Start learning</a>
           </div>
         </div>
 
@@ -95,21 +87,16 @@
 
       <section class="band" id="course">
         <div class="section-head">
-          <p class="eyebrow">Course map</p>
-          <h2>The path</h2>
-          <p>
-            Ten modules. Each module has a short lesson, a fill-in assignment, and a
-            gotcha list. The order follows the xv6 lab arc, but the language is plain.
-          </p>
+          <h2>Course map</h2>
+          <p>11 modules. Each has a lesson, an assignment, and a gotcha list.</p>
         </div>
         <div class="timeline" id="courseTimeline"></div>
       </section>
 
       <section class="band split" id="lessons">
         <div class="section-head">
-          <p class="eyebrow">Lessons</p>
-          <h2>Break it, fix it, understand it</h2>
-          <p>Each lesson: concrete state → one blank → exact failure → code → grill. No passive reading.</p>
+          <h2>Lessons</h2>
+          <p>State, blank, failure, code, grill. Pick one.</p>
         </div>
         <div class="lesson-shell">
           <aside class="lesson-list" id="lessonList" aria-label="Lesson list"></aside>
@@ -119,133 +106,42 @@
 
       <section class="band" id="assignments">
         <div class="section-head">
-          <p class="eyebrow">Assignments</p>
-          <h2>Build or fail</h2>
-          <p>Each brief says what to build, what to prove, and where you can lie to yourself.</p>
+          <h2>Assignments</h2>
+          <p>What to build, what to prove, where you can lie to yourself.</p>
         </div>
         <div class="assignment-grid" id="assignmentGrid"></div>
       </section>
 
-      <section class="band" id="local-code">
-        <div class="section-head">
-          <p class="eyebrow">Local code audit</p>
-          <h2>Can this be done here?</h2>
-          <p>
-            Yes. The working tree has the combined hand-built code through net,
-            and the official xv6-labs-2021 checkout has branch scaffolds and
-            graders for the remaining assignments.
-          </p>
-        </div>
-        <div class="code-audit" id="codeAudit"></div>
-      </section>
-
       <section class="band" id="drills">
         <div class="section-head">
-          <p class="eyebrow">Drills</p>
-          <h2>Interview pressure</h2>
-          <p>Questions that force exact state transitions, not slogans.</p>
+          <h2>Drills</h2>
+          <p>Interview questions that force exact state transitions.</p>
         </div>
         <div class="drill-panel">
           <div id="drillQuestion" class="drill-question"></div>
           <div class="drill-controls">
-            <button class="icon-button" id="prevDrill" type="button" aria-label="Previous drill">‹</button>
+            <button class="icon-button" id="prevDrill" type="button" aria-label="Previous drill">&#8249;</button>
             <button class="button primary" id="showAnswer" type="button">Show answer</button>
-            <button class="icon-button" id="nextDrill" type="button" aria-label="Next drill">›</button>
+            <button class="icon-button" id="nextDrill" type="button" aria-label="Next drill">&#8250;</button>
           </div>
           <pre id="drillAnswer" class="answer-box" hidden></pre>
         </div>
       </section>
 
-      <section class="band" id="setup">
-        <div class="section-head">
-          <p class="eyebrow">Setup</p>
-          <h2>Get the xv6 labs</h2>
-          <p>Clone the official MIT 6.S081 labs and build them locally.</p>
-        </div>
-        <div class="memory-diagram">
-$ git clone git://g.csail.mit.edu/xv6-labs-2025
-$ cd xv6-labs-2025
-$ make qemu
-        </div>
-        <p>Each lesson corresponds to a lab branch. Switch with <code>git checkout util</code>, <code>git checkout syscall</code>, etc.</p>
-      </section>
-
-      <section class="band" id="technical">
-        <div class="section-head">
-          <p class="eyebrow">Technical Depth</p>
-          <h2>Memory Barriers & Cache Coherence</h2>
-          <p>Store buffers, cache lines, TSO, acquire/release semantics.</p>
-        </div>
-        <div class="memory-diagram">
-Thread 0          Thread 1
--------          -------
-x = 1;           while (y == 0);
-__sync_synchronize();
-y = 1;           print x;
-
-Without fence: Thread 1 may print 0 (x not visible).
-With fence: Thread 1 prints 1 (x visible before y).
-        </div>
-        <div class="assignment-grid">
-          <article class="assignment-card">
-            <h3>A11 - Memory Barriers</h3>
-            <p>Add acquire/release barriers to lock implementation.</p>
-            <p><strong>Proof:</strong> Lock ordering test passes on 8 cores.</p>
-            <p><strong>Trap:</strong> acquire after load, release before store, fence both ways.</p>
-          </article>
-        </div>
-      </section>
-
       <section class="band" id="notes">
         <div class="section-head">
-          <p class="eyebrow">Chapter Notes</p>
-          <h2>The full write-ups</h2>
-          <p>Each chapter is a standalone markdown file covering one lab's mechanisms, gotchas, and code patterns. Read them alongside the lessons or use them as reference.</p>
+          <h2>Chapter notes</h2>
+          <p>Full write-ups for each lab. Read alongside the lessons or as reference.</p>
         </div>
         <div class="code-audit" id="notesGrid"></div>
-      </section>
-
-      <section class="band" id="style">
-        <div class="section-head">
-          <p class="eyebrow">House style</p>
-          <h2>The teaching contract</h2>
-          <p>This is the reusable format for future posts and paid lessons.</p>
-        </div>
-        <div class="style-grid" id="styleGrid"></div>
-      </section>
-
-      <section class="band" id="publish">
-        <div class="section-head">
-          <p class="eyebrow">Publish-ready</p>
-          <h2>Built for doers</h2>
-          <p>
-            This is not a notes dump. The repo has a static site, share cards,
-            licensing, attribution, contribution rules, and a GitHub Pages workflow.
-          </p>
-        </div>
-        <div class="publish-grid">
-          <article>
-            <strong>No dependency trap</strong>
-            <p>Open `index.html`, or push to GitHub Pages. The site has no package install requirement.</p>
-          </article>
-          <article>
-            <strong>Proof over slogans</strong>
-            <p>Assignments point to local code, branch scaffolds, tests, and graders.</p>
-          </article>
-          <article>
-            <strong>Forkable format</strong>
-            <p>Each new lesson follows the same shape: state, blank, failure, code, grill.</p>
-          </article>
-        </div>
       </section>
     </main>
 
     <footer class="footer">
       <p>
-        Independent learning material inspired by xv6 and MIT 6.S081. Not affiliated with MIT.
-        Source code examples are short teaching excerpts.
+        Independent material inspired by xv6 and MIT 6.S081. Not affiliated with MIT.
       </p>
-      <a href="#home">Back to top</a>
+      <a href="#home">Top</a>
     </footer>
 
     <script>
